@@ -7,9 +7,20 @@ const MySplineHome = () => {
   return (
     <>
       <div className="h-screen w-screen overflow-hidden flex items-center justify-center bg-black relative">
-        <Link href="/dashboard" className="absolute left-[18%] top-[45%] text-white/70 animate-pulse hover:animate-none hover:text-white/95 font-winchester text-4xl">Go to Dashboard</Link>
-        <Suspense fallback={<div className="text-white flex items-center justify-center w-full h-screen font-roashe text-5xl">Loading </div>}>
-        <Spline scene="https://prod.spline.design/2iQaJ8VtqLe8zZPf/scene.splinecode" />
+        <Link
+          href="/dashboard"
+          className="absolute flex items-center justify-center left-1/2 -translate-x-1/2 lg:left-[24%] lg:top-[43.5%] hover:lg:left-[24.5%] hover:left-[51%] text-white/70 hover:animate-none hover:text-text/95 p-2 font-winchester text-4xl hover:border-2 border-white transition-all duration-100 ease-linear"
+        >
+          Go to Dashboard
+        </Link>
+        <Suspense
+          fallback={
+            <div className="text-white flex items-center justify-center w-full h-screen font-roashe text-5xl">
+              Loading{" "}
+            </div>
+          }
+        >
+          <Spline scene="https://prod.spline.design/2iQaJ8VtqLe8zZPf/scene.splinecode" />
         </Suspense>
       </div>
     </>
