@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image"
 import React, { Suspense } from "react";
 import Vector from "../components/small/vector";
 import { HomeIcon } from "@heroicons/react/24/solid";
@@ -23,6 +24,8 @@ const HomePage = () => {
           scene="https://prod.spline.design/SjeEJAoyEkoml-zu/scene.splinecode"
         />
 
+        <Image className="absolute scale-75 md:scale-100 z-50 -right-20 md:right-10 top-0 transition-all duration-100 ease-linear" src="/patterns/spade-green2.svg" alt="" width={300} height={300}/>
+
         <ModeToggle />
         <div className="fixed z-50 cursor-pointer top-10 left-10">
           <HomeButton />
@@ -37,30 +40,30 @@ const HomePage = () => {
               className="flex items-center justify-between py-4 px-10 min-h-full w-full transition-all ease-in-out duration-500"
             >
               <div className="flex flex-col items-center justify-center gap-10 sm:gap-12 lg:gap-16 h-full w-full mr-24 sm:mr-40">
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
               </div>
               <div className="flex flex-col items-center justify-center gap-10 sm:gap-12 lg:gap-16 h-full w-full ml-24 sm:ml-40">
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
-                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-6 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
+                <div className="bg-zinc-400/90 hover:bg-zinc-400 dark:bg-zinc-600/90 dark:hover:bg-zinc-600 p-8 sm:p-8 lg:p-10 rounded-full flex items-center justify-center">
                   <HomeIcon className="h-6 sm:h-8 lg:h-10 text-white dark:text-white" />
                 </div>
               </div>
             </motion.div>
           </div>
-          <div className="absolute z-10 bottom-0 left-1/2 -translate-x-1/2 scale-50 sm:scale-75 lg:scale-90">
+          <div className="absolute z-10 bottom-0 left-1/2 -translate-x-1/2 scale-75 lg:scale-90">
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
