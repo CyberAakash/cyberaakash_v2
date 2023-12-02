@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "pages/Home.Page.jsx", "components/small/vector.jsx", "pages/Home.Page.jsx", "tstailwindconfignoneed", "app/loading.js"],
   "exclude": ["node_modules"]
 }

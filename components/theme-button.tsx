@@ -39,15 +39,15 @@ export function ModeToggle() {
     <>
       <div
         onClick={() =>
-          currentTheme == "dark" ? setTheme("light") : setTheme("dark")
+          theme == "dark" ? setTheme("light") : setTheme("dark")
         }
-        className="fixed cursor-pointer h-12 w-12 p-2 rounded-full backdrop-blur flex items-center justify-center top-10 left-10 bg-white/50 dark:bg-black/50 text-black dark:text-white"
+        className="fixed z-50 cursor-pointer h-12 w-12 p-2 rounded-full backdrop-blur flex items-center justify-center top-10 left-10 bg-white/50 dark:bg-black/50 text-black dark:text-white"
       >
         {/* {currentTheme == "dark" ? ( */}
         <Sun
           className={twMerge(
             "h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all",
-            currentTheme == "dark" && "dark:rotate-0 dark:scale-100 "
+            theme == "dark" && "dark:rotate-0 dark:scale-100 "
           )}
           //   onClick={() => setTheme("light")}
         />

@@ -2,11 +2,14 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    './pages/**/*.{ts,tsx}',
-    './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
-	],
+    // "./pages/**/*.{ts,tsx}",
+    // "./components/**/*.{ts,tsx}",
+    // "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
   theme: {
     container: {
       center: true,
@@ -17,10 +20,10 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        winchester: ['var(--font-winchester)'],
-        roashe: ['var(--font-roashe)'],
-        devalencia: ['var(--font-devalencia)'],
-        designer: ['var(--font-designer)']
+        winchester: ["var(--font-winchester)"],
+        roashe: ["var(--font-roashe)"],
+        devalencia: ["var(--font-devalencia)"],
+        designer: ["var(--font-designer)"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -79,4 +82,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
