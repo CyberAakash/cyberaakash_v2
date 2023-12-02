@@ -14,13 +14,13 @@ const MySplineHome = () => {
             </div>
           }
         >
+          <Spline scene="https://prod.spline.design/2iQaJ8VtqLe8zZPf/scene.splinecode" />
           <Link
             href="/dashboard"
-            className="absolute flex items-center justify-center left-1/2 -translate-x-1/2 lg:left-[24%] lg:top-[43.5%] hover:lg:left-[24.5%] hover:left-[51%] text-white/70 hover:animate-none hover:text-text/95 p-2 font-winchester text-4xl hover:border-2 border-white transition-all duration-100 ease-linear"
+            className="absolute flex items-center justify-center w-full sm:w-fit top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2  hover:left-[51%] hover:top-[51%] text-white/70 hover:animate-none hover:text-black/95 p-4 text-4xl hover:bg-white/70 font-roashe transition-all duration-100 ease-linear"
           >
             Go to Dashboard
           </Link>
-          <Spline scene="https://prod.spline.design/2iQaJ8VtqLe8zZPf/scene.splinecode" />
         </Suspense>
       </div>
     </>
