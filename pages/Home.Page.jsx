@@ -9,10 +9,11 @@ const Spline = React.lazy(() => import("@splinetool/react-spline"));
 
 const HomePage = () => {
   return (
-    <>
+    <div className="overflow-hidden h-screen w-screen flex items-start justify-center relative">
       <Suspense
+        className="overflow-hidden h-screen w-screen flex items-start justify-center relative"
         fallback={
-          <div className="text-white flex items-center justify-center w-full h-screen font-roashe text-5xl">
+          <div className="text-white flex items-center justify-center w-full h-screen font-roashe text-5xl overflow-hidden">
             Loading
           </div>
         }
@@ -71,7 +72,7 @@ const HomePage = () => {
           </div>
         </div>
       </Suspense>
-    </>
+    </div>
   );
 };
 
