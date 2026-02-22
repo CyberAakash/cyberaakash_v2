@@ -12,5 +12,5 @@ export default async function BlogPage() {
     .eq("is_published", true)
     .order("published_at", { ascending: false });
 
-  return <BlogListClient blogs={blogs || []} />;
+  return <BlogListClient initialBlogs={blogs || []} />;
 }

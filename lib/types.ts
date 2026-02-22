@@ -18,6 +18,7 @@ export type Skill = {
     name: string;
     category: string;
     icon_name: string | null;
+    image_url: string | null;
     proficiency: number;
     display_order: number;
     is_visible: boolean;
@@ -94,6 +95,7 @@ export type Blog = {
     cover_image: string | null;
     tags: string[];
     is_published: boolean;
+    is_featured: boolean;
     published_at: string | null;
     created_at: string;
 };

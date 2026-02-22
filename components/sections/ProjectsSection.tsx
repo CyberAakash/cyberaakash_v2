@@ -3,7 +3,7 @@
 import type { Project } from "@/lib/types";
 import CenterBurst, { CenterBurstStagger, CenterBurstItem } from "@/components/animations/CenterBurst";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
-import { ExternalLink, Github, Monitor, Smartphone, Layout } from "lucide-react";
+import { ExternalLink, Github, Monitor, Smartphone, Layout, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { MobileFrame } from "@/components/ui/mobile-frame";
@@ -20,9 +20,17 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
           <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
             // projects
           </p>
-          <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight mb-12 text-center">
-            Things I&apos;ve Built
-          </h2>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight text-center md:text-left">
+              Things I&apos;ve Built
+            </h2>
+            <Link 
+              href="/projects" 
+              className="group flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors justify-center md:justify-start"
+            >
+              View all projects <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </CenterBurst>
 
         <CenterBurstStagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.08}>
