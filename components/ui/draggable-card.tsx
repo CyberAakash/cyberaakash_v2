@@ -1,68 +1,189 @@
-"use client";
-
-import React, { useRef, useState } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-export const DraggableCardContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className={cn("flex items-center justify-center", className)}>
-      {children}
-    </div>
-  );
-};
+import React, { useRef, useState, useEffect } from "react";
+import {
+  motion,
+  useMotionValue,
+  useSpring,
+  useTransform,
+  animate,
+  useVelocity,
+  useAnimationControls,
+} from "framer-motion";
+import {
+  Code, Braces, Server, Database, Terminal, Cpu, Shield, Globe, Layout, Cloud, Smartphone, Palette
+} from "lucide-react";
 
 export const DraggableCardBody = ({
-  children,
   className,
+  style,
+  children,
 }: {
-  children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
 }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const controls = useAnimationControls();
+  const [constraints, setConstraints] = useState({
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  });
 
-  const mouseX = useSpring(x, { stiffness: 300, damping: 30 });
-  const mouseY = useSpring(y, { stiffness: 300, damping: 30 });
+  // physics
+  const velocityX = useVelocity(mouseX);
+  const velocityY = useVelocity(mouseY);
 
-  function onMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
-    const { left, top, width, height } = currentTarget.getBoundingClientRect();
-    x.set(clientX - left - width / 2);
-    y.set(clientY - top - height / 2);
-  }
+  const springConfig = {
+    stiffness: 100,
+    damping: 20,
+    mass: 0.5,
+  };
 
-  function onMouseLeave() {
-    x.set(0);
-    y.set(0);
-  }
+  const rotateX = useSpring(
+    useTransform(mouseY, [-300, 300], [25, -25]),
+    springConfig,
+  );
+  const rotateY = useSpring(
+    useTransform(mouseX, [-300, 300], [-25, 25]),
+    springConfig,
+  );
 
-  const rotateX = useTransform(mouseY, [-100, 100], [10, -10]);
-  const rotateY = useTransform(mouseX, [-100, 100], [-10, 10]);
+  const opacity = useSpring(
+    useTransform(mouseX, [-300, 0, 300], [0.8, 1, 0.8]),
+    springConfig,
+  );
+
+  const glareOpacity = useSpring(
+    useTransform(mouseX, [-300, 0, 300], [0.2, 0, 0.2]),
+    springConfig,
+  );
+
+  useEffect(() => {
+    const updateConstraints = () => {
+      if (typeof window !== "undefined") {
+        setConstraints({
+          top: -window.innerHeight / 2,
+          left: -window.innerWidth / 2,
+          right: window.innerWidth / 2,
+          bottom: window.innerHeight / 2,
+        });
+      }
+    };
+
+    updateConstraints();
+    window.addEventListener("resize", updateConstraints);
+    return () => window.removeEventListener("resize", updateConstraints);
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { clientX, clientY } = e;
+    const { width, height, left, top } =
+      cardRef.current?.getBoundingClientRect() ?? {
+        width: 0,
+        height: 0,
+        left: 0,
+        top: 0,
+      };
+    const centerX = left + width / 2;
+    const centerY = top + height / 2;
+    const deltaX = clientX - centerX;
+    const deltaY = clientY - centerY;
+    mouseX.set(deltaX);
+    mouseY.set(deltaY);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
 
   return (
     <motion.div
+      ref={cardRef}
       drag
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.1}
-      onMouseMove={onMouseMove}
-      onMouseLeave={onMouseLeave}
+      dragConstraints={constraints}
+      onDragStart={() => {
+        document.body.style.cursor = "grabbing";
+      }}
+      onDragEnd={(event, info) => {
+        document.body.style.cursor = "default";
+
+        controls.start({
+          rotateX: 0,
+          rotateY: 0,
+          transition: {
+            type: "spring",
+            ...springConfig,
+          },
+        });
+        const currentVelocityX = velocityX.get();
+        const currentVelocityY = velocityY.get();
+
+        const velocityMagnitude = Math.sqrt(
+          currentVelocityX * currentVelocityX +
+            currentVelocityY * currentVelocityY,
+        );
+        const bounce = Math.min(0.8, velocityMagnitude / 1000);
+
+        animate(info.point.x, info.point.x + currentVelocityX * 0.3, {
+          duration: 0.8,
+          ease: [0.2, 0, 0, 1],
+          bounce,
+          type: "spring",
+          stiffness: 50,
+          damping: 15,
+          mass: 0.8,
+        });
+
+        animate(info.point.y, info.point.y + currentVelocityY * 0.3, {
+          duration: 0.8,
+          ease: [0.2, 0, 0, 1],
+          bounce,
+          type: "spring",
+          stiffness: 50,
+          damping: 15,
+          mass: 0.8,
+        });
+      }}
       style={{
+        ...style,
         rotateX,
         rotateY,
-        transformStyle: "preserve-3d",
+        opacity,
+        willChange: "transform",
       }}
+      animate={controls}
+      whileHover={{ scale: 1.02 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        "relative flex items-center justify-center transition-all duration-200 ease-linear",
-        className
+        "relative min-h-64 w-64 md:min-h-80 md:w-80 overflow-hidden rounded-xl bg-neutral-100 p-6 shadow-2xl transition-all duration-200 cursor-grab active:cursor-grabbing dark:bg-neutral-900 border border-border/50",
+        className,
       )}
     >
       {children}
+      <motion.div
+        style={{
+          opacity: glareOpacity,
+        }}
+        className="pointer-events-none absolute inset-0 bg-white select-none opacity-0"
+      />
     </motion.div>
+  );
+};
+
+export const DraggableCardContainer = ({
+  className,
+  children,
+}: {
+  className?: string;
+  children?: React.ReactNode;
+}) => {
+  return (
+    <div className={cn("[perspective:3000px]", className)}>{children}</div>
   );
 };
