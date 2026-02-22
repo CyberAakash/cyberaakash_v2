@@ -2,11 +2,6 @@
 module.exports = {
   darkMode: ["class"],
   content: [
-    // "./pages/**/*.{ts,tsx}",
-    // "./components/**/*.{ts,tsx}",
-    // "./app/**/*.{ts,tsx}",
-    "./src/**/*.{ts,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
@@ -20,10 +15,10 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        winchester: ["var(--font-winchester)"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
         roashe: ["var(--font-roashe)"],
-        devalencia: ["var(--font-devalencia)"],
         designer: ["var(--font-designer)"],
+        mono: ["JetBrains Mono", "Fira Code", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -67,12 +62,12 @@ module.exports = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: 0 },
+          from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
+          to: { height: "0" },
         },
       },
       animation: {

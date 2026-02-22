@@ -1,76 +1,76 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from "next";
+import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import localFont from "@next/font/local";
+import { Toaster } from "@/components/ui/sonner";
+import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 
-export const metadata: Metadata = {
-  title: 'CyberAakash',
-  description: 'Portfolio of CyberAakash',
-}
-
-const winchester = localFont({
-  src: [
-    {
-      path: "../public/fonts/WinchesterCaps.ttf",
-      weight: "400",
-    },
-    {
-      path: "../public/fonts/WinchesterOrnate.ttf",
-      weight: "700",
-    },
-    {
-      path: "../public/fonts/WinchesterRegular.ttf",
-      weight: "900",
-    },
-  ],
-  variable: "--font-winchester",
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 const roashe = localFont({
   src: [
     {
       path: "../public/fonts/RoashePersonalUse-jEa4M.otf",
-      // weight: "400",
     },
   ],
   variable: "--font-roashe",
-});
-
-const devalencia = localFont({
-  src: [
-    {
-      path: "../public/fonts/De Valencia (beta).otf",
-      // weight: "400",
-    },
-  ],
-  variable: "--font-devalencia",
 });
 
 const designer = localFont({
   src: [
     {
       path: "../public/fonts/Designer-Bold.otf",
-      // weight: "400",
     },
   ],
   variable: "--font-designer",
 });
 
+export const metadata: Metadata = {
+  title: "CyberAakash | Full Stack Developer",
+  description:
+    "Portfolio of Aakash T — Full Stack Developer at Zoho. Building products, shipping code, chasing entrepreneurship.",
+  keywords: [
+    "Aakash T",
+    "CyberAakash",
+    "Full Stack Developer",
+    "Zoho",
+    "Next.js",
+    "React",
+    "Portfolio",
+  ],
+  authors: [{ name: "Aakash T" }],
+  openGraph: {
+    title: "CyberAakash | Full Stack Developer",
+    description:
+      "Code. Play. Gym. Learn. Think. Sleep. Portfolio of a builder.",
+    type: "website",
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${winchester.variable} ${roashe.variable} ${devalencia.variable} ${designer.variable} font-sans`}>
-      <body className="">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${roashe.variable} ${designer.variable}`}
+    >
+      <body className="font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
+          forcedTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
           {children}
+          <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>
     </html>
