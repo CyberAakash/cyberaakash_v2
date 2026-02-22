@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
@@ -19,6 +19,7 @@ import {
   PanelLeftOpen,
   FileText,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -31,7 +32,62 @@ const navItems = [
   { href: "/admin/blog", label: "Blog", icon: FileText },
 ];
 
-import { FloatingDock } from "@/components/ui/floating-dock";
+function NavItem({ 
+  item, 
+  isActive, 
+  isCollapsed 
+}: { 
+  item: typeof navItems[0]; 
+  isActive: boolean; 
+  isCollapsed: boolean;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div className="relative group">
+      <Link
+        href={item.href}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150",
+          isActive
+            ? "bg-foreground text-background font-medium"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent",
+          isCollapsed && "justify-center px-0"
+        )}
+      >
+        <item.icon className="w-4 h-4 shrink-0" />
+        <AnimatePresence>
+          {!isCollapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              className="overflow-hidden whitespace-nowrap"
+            >
+              {item.label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </Link>
+
+      {/* Tooltip */}
+      <AnimatePresence>
+        {isCollapsed && isHovered && (
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-[10px] rounded pointer-events-none z-50 whitespace-nowrap"
+          >
+            {item.label}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function AdminLayout({
   children,
@@ -40,7 +96,17 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
+  const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  const collapsed = isMobile || isDesktopCollapsed;
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
@@ -53,25 +119,19 @@ export default function AdminLayout({
     router.refresh();
   };
 
-  const dockItems = navItems.map((item) => ({
-    title: item.label,
-    icon: <item.icon className="h-full w-full text-neutral-500 dark:text-neutral-300" />,
-    href: item.href,
-  }));
-
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
-      {/* Sidebar — desktop only */}
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
       <motion.aside
         animate={{ width: collapsed ? 64 : 240 }}
         transition={{ duration: 0.2, ease: "easeInOut" }}
-        className="hidden md:flex h-screen sticky top-0 border-r border-border/50 flex flex-col overflow-hidden shrink-0"
+        className="h-screen sticky top-0 border-r border-border/50 flex flex-col overflow-hidden shrink-0 z-50 bg-background"
       >
         {/* Header */}
         <div className="p-4 border-b border-border/50 flex items-center gap-3 min-h-[60px]">
-          <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center text-xs font-bold shrink-0">
+          <Link href="/" className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center text-xs font-bold shrink-0">
             CA
-          </div>
+          </Link>
           <AnimatePresence>
             {!collapsed && (
               <motion.div
@@ -89,62 +149,48 @@ export default function AdminLayout({
 
         {/* Nav items */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${
-                  isActive
-                    ? "bg-foreground text-background font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                } ${collapsed ? "justify-center px-0" : ""}`}
-              >
-                <item.icon className="w-4 h-4 shrink-0" />
-                <AnimatePresence>
-                  {!collapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      className="overflow-hidden whitespace-nowrap"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </Link>
-            );
-          })}
+          {navItems.map((item) => (
+            <NavItem 
+              key={item.href} 
+              item={item} 
+              isActive={pathname === item.href} 
+              isCollapsed={collapsed} 
+            />
+          ))}
         </nav>
 
         {/* Bottom actions */}
-        <div className="p-2 border-t border-border/50 space-y-0.5">
+        <div className="p-2 border-t border-border/50 space-y-0.5 relative">
           <Link
             href="/"
-            title={collapsed ? "View Site" : undefined}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${collapsed ? "justify-center px-0" : ""}`}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors",
+              collapsed && "justify-center px-0"
+            )}
           >
             <ArrowLeft className="w-4 h-4 shrink-0" />
             {!collapsed && <span>View Site</span>}
           </Link>
           <button
             onClick={handleLogout}
-            title={collapsed ? "Logout" : undefined}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full ${collapsed ? "justify-center px-0" : ""}`}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full",
+              collapsed && "justify-center px-0"
+            )}
           >
             <LogOut className="w-4 h-4 shrink-0" />
             {!collapsed && <span>Logout</span>}
           </button>
 
-          {/* Collapse toggle */}
+          {/* Collapse toggle (Desktop only) */}
           <button
-            onClick={() => setCollapsed(!collapsed)}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full ${collapsed ? "justify-center px-0" : ""}`}
+            onClick={() => setIsDesktopCollapsed(!isDesktopCollapsed)}
+            className={cn(
+              "hidden md:flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors w-full",
+              collapsed && "justify-center px-0"
+            )}
           >
-            {collapsed ? (
+            {isDesktopCollapsed ? (
               <PanelLeftOpen className="w-4 h-4 shrink-0" />
             ) : (
               <>
@@ -157,12 +203,9 @@ export default function AdminLayout({
       </motion.aside>
 
       {/* Main content */}
-      <main className="flex-1 p-4 md:p-8 overflow-auto pb-24 md:pb-8 relative">
-        {children}
-
-        {/* Floating Dock for Mobile */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden">
-          <FloatingDock items={dockItems} />
+      <main className="flex-1 overflow-auto relative">
+        <div className="p-4 md:p-8">
+          {children}
         </div>
       </main>
     </div>
