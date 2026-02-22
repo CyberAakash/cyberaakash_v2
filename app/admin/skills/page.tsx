@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, Trash2, GripVertical, Pencil, X, Save } from "lucide-react";
+import { Plus, Trash2, GripVertical, Pencil, X, Save, Eye, EyeOff } from "lucide-react";
 import type { Skill } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -256,7 +256,7 @@ export default function AdminSkills() {
                           )}
                           title={skill.is_visible ? "Hide skill" : "Show skill"}
                         >
-                          {skill.is_visible ? <Pencil className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                          {skill.is_visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                         </button>
                         <button
                           onClick={() => startEdit(skill)}

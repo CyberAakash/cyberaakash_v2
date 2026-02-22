@@ -3,7 +3,7 @@
 import type { Project } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
-import { ExternalLink, Github, Monitor, Smartphone, Layout, Search, Loader2 } from "lucide-react";
+import { ExternalLink, Github, Monitor, Smartphone, Layout, Search, Loader2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { MobileFrame } from "@/components/ui/mobile-frame";
