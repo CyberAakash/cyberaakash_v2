@@ -83,6 +83,13 @@ export default function BlogListClient({ initialBlogs }: Props) {
       <Navbar />
 
       <main className="max-w-5xl mx-auto px-6 pt-24 pb-16">
+        <Link 
+          href="/" 
+          className="group inline-flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors mb-8"
+        >
+          <ArrowRight className="w-3 h-3 rotate-180 group-hover:-translate-x-1 transition-transform" />
+          Back to home
+        </Link>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
