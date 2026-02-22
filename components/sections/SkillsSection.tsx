@@ -1,3 +1,5 @@
+"use client";
+
 import type { Skill } from "@/lib/types";
 import CenterBurst, { CenterBurstStagger, CenterBurstItem } from "@/components/animations/CenterBurst";
 import { DraggableCardContainer, DraggableCardBody } from "@/components/ui/draggable-card";
