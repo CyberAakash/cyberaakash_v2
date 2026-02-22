@@ -52,7 +52,7 @@ const cardPositions = [
 
 export default function SkillsSection({ skills }: SkillsSectionProps) {
   return (
-    <section id="skills" className="relative min-h-screen w-full flex flex-col justify-center overflow-hidden py-24">
+    <section id="skills" className="relative min-h-screen w-full flex flex-col justify-center py-24">
       <div className="max-w-7xl mx-auto w-full px-6 z-10 pointer-events-none">
         <CenterBurst>
           <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
@@ -64,18 +64,18 @@ export default function SkillsSection({ skills }: SkillsSectionProps) {
         </CenterBurst>
       </div>
 
-      <DraggableCardContainer className="absolute inset-0 w-full h-full">
+      <DraggableCardContainer className="absolute inset-0 w-full h-full z-50">
         {/* Background Hint Text */}
-        <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl text-center text-4xl md:text-6xl font-black text-foreground/[0.03] dark:text-foreground/[0.02] select-none uppercase tracking-tighter leading-none pointer-events-none">
+        <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full px-12 text-center text-4xl md:text-8xl font-black text-foreground/[0.03] dark:text-foreground/[0.02] select-none uppercase tracking-tighter leading-none pointer-events-none">
           Master the code. <br />
           Rules of the Stack. <br />
-          Fight for pure logic.
+          Fight for logic.
         </p>
 
         {/* Dynamic Interaction Hint */}
         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce pointer-events-none opacity-40">
            <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-             Grab and toss around
+             Grab & Toss Anywhere
            </span>
         </div>
 
@@ -87,9 +87,9 @@ export default function SkillsSection({ skills }: SkillsSectionProps) {
             <DraggableCardBody 
               key={skill.id}
               className={cn(
-                "absolute p-4 md:p-6",
-                "w-48 h-48 md:w-64 md:h-64", // Scaled down for splash layout
-                "rotate-0" // Resetting default rotate to let parent styles or random pos handle it
+                "absolute",
+                "w-48 h-48 md:w-72 md:h-72", // Larger card size
+                "z-[5]"
               )}
               style={{
                 top: pos.top,
@@ -97,21 +97,21 @@ export default function SkillsSection({ skills }: SkillsSectionProps) {
                 transform: `rotate(${pos.rotate})`
               }}
             >
-              <div className="flex flex-col items-center justify-center gap-4 text-center h-full">
-                <div className="w-16 h-16 md:w-24 md:h-24 rounded-2xl bg-foreground/5 dark:bg-foreground/10 border border-border/10 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+              <div className="flex flex-col items-center justify-center gap-4 text-center w-full h-full relative p-6">
+                <div className="flex-1 w-full flex items-center justify-center overflow-hidden">
                   {skill.image_url ? (
                     <img 
                       src={skill.image_url} 
                       alt={skill.name} 
-                      className="w-full h-full object-contain p-3 md:p-4"
+                      className="w-[80%] h-[80%] object-contain opacity-90 group-hover:opacity-100 transition-opacity"
                     />
                   ) : (
-                    <SkillIcon className="w-8 h-8 md:w-12 md:h-12 text-muted-foreground group-hover:text-foreground transition-all duration-300" />
+                    <SkillIcon className="w-[60%] h-[60%] text-muted-foreground group-hover:text-foreground transition-all duration-300" />
                   )}
                 </div>
-                <div>
-                  <h3 className="text-sm md:text-base font-bold tracking-tight mb-1">{skill.name}</h3>
-                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest">{skill.category || 'Tech'}</span>
+                <div className="mt-auto">
+                  <h3 className="text-sm md:text-lg font-bold tracking-tight mb-0.5">{skill.name}</h3>
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">{skill.category || 'Technology'}</p>
                 </div>
               </div>
             </DraggableCardBody>
