@@ -32,14 +32,13 @@ export const DraggableCardBody = ({
   const rotateX = useTransform(mouseY, [-100, 100], [15, -15]);
   const rotateY = useTransform(mouseX, [-100, 100], [-15, 15]);
 
+  const [isDragging, setIsDragging] = useState(false);
   const [constraints, setConstraints] = useState({ top: 0, left: 0, right: 0, bottom: 0 });
 
   useEffect(() => {
     const updateConstraints = () => {
       if (typeof window !== "undefined" && cardRef.current) {
         const rect = cardRef.current.getBoundingClientRect();
-        // Constraints relative to the initial position to allow global movement
-        // We set very large constraints so it can go anywhere in the viewport
         setConstraints({
           top: -rect.top,
           left: -rect.left,
@@ -73,31 +72,33 @@ export const DraggableCardBody = ({
       ref={cardRef}
       drag
       dragConstraints={constraints}
-      dragElastic={0.05} // Low elasticity for performant "hits"
-      dragMomentum={true}
+      dragElastic={0.02}
+      dragMomentum={false} // Disable default momentum for custom physics
       onDragStart={() => {
+        setIsDragging(true);
         document.body.style.cursor = "grabbing";
       }}
       onDragEnd={(event, info) => {
+        setIsDragging(false);
         document.body.style.cursor = "default";
         
-        // Single bounce simulation on velocity release
         const vX = velocityX.get();
         const vY = velocityY.get();
         
-        animate(x, x.get() + vX * 0.1, {
+        // Dynamic "toss" logic with single bounce
+        animate(x, x.get() + vX * 0.15, {
           type: "spring",
-          stiffness: 100,
+          stiffness: 220,
           damping: 25,
-          mass: 0.5,
+          mass: 0.4,
           velocity: vX
         });
         
-        animate(y, y.get() + vY * 0.1, {
+        animate(y, y.get() + vY * 0.15, {
           type: "spring",
-          stiffness: 100,
+          stiffness: 220,
           damping: 25,
-          mass: 0.5,
+          mass: 0.4,
           velocity: vY
         });
       }}
@@ -108,8 +109,9 @@ export const DraggableCardBody = ({
         rotateX,
         rotateY,
         willChange: "transform",
+        zIndex: isDragging ? 1000 : 5,
       }}
-      whileHover={{ scale: 1.05, zIndex: 100 }}
+      whileHover={{ scale: 1.05 }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className={cn(
