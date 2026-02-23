@@ -22,6 +22,7 @@ export type Skill = {
     proficiency: number;
     display_order: number;
     is_visible: boolean;
+    is_archived: boolean;
     created_at: string;
 };
 
@@ -37,6 +38,7 @@ export type Experience = {
     tech_stack: string[];
     display_order: number;
     is_visible: boolean;
+    is_archived: boolean;
     created_at: string;
 };
 
@@ -56,6 +58,7 @@ export type Project = {
     is_featured: boolean;
     display_order: number;
     is_visible: boolean;
+    is_archived: boolean;
     created_at: string;
 };
 
@@ -68,6 +71,7 @@ export type Certification = {
     badge_url: string | null;
     display_order: number;
     is_visible: boolean;
+    is_archived: boolean;
     created_at: string;
 };
 
@@ -83,6 +87,8 @@ export type Event = {
     image_url: string | null;
     images: string[];
     is_visible: boolean;
+    is_featured: boolean;
+    is_archived: boolean;
     created_at: string;
 };
 
@@ -95,7 +101,22 @@ export type Blog = {
     cover_image: string | null;
     tags: string[];
     is_published: boolean;
+    is_visible: boolean;
     is_featured: boolean;
+    is_archived: boolean;
     published_at: string | null;
     created_at: string;
+};
+
+export type Social = {
+    id: string;
+    name: string;
+    description: string | null;
+    url: string;
+    image_url: string | null;
+    display_order: number;
+    is_visible: boolean;
+    is_archived: boolean;
+    created_at: string;
+    updated_at: string;
 };

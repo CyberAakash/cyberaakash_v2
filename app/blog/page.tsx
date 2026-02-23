@@ -10,6 +10,7 @@ export default async function BlogPage() {
     .from("blogs")
     .select("*")
     .eq("is_published", true)
+    .eq("is_visible", true)
     .order("published_at", { ascending: false });
 
   return <BlogListClient initialBlogs={blogs || []} />;

@@ -6,7 +6,7 @@ import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 interface ImageUploadProps {
-  bucket: "project-images" | "blog-images" | "skill-images";
+  bucket: "project-images" | "blog-images" | "skill-images" | "social-images";
   onUpload: (url: string) => void;
   value?: string;
 }

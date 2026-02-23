@@ -6,10 +6,45 @@ import { Award, ExternalLink } from "lucide-react";
 import { EvervaultCard } from "@/components/ui/evervault-card";
 
 interface CertificationsSectionProps {
-  certifications: Certification[];
+  children?: React.ReactNode;
 }
 
-export default function CertificationsSection({ certifications }: CertificationsSectionProps) {
+export function CertificationList({ certifications }: { certifications: Certification[] }) {
+  return (
+    <CenterBurstStagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.08}>
+      {certifications.map((cert) => (
+        <CenterBurstItem key={cert.id}>
+          <div className="group relative">
+            <EvervaultCard className="h-[300px]">
+              <div className="flex flex-col h-full w-full justify-end p-6">
+                <div className="flex flex-col gap-2 text-left">
+                  <div className="w-8 h-8 rounded-lg bg-foreground/10 border border-border/30 flex items-center justify-center shrink-0 mb-2 group-hover:scale-110 transition-transform duration-300">
+                    <Award className="w-4 h-4 text-foreground" />
+                  </div>
+                  <h3 className="text-xl font-bold line-clamp-2 leading-tight tracking-tight group-hover:text-primary transition-colors">{cert.title}</h3>
+                  <p className="text-[10px] text-muted-foreground/60 font-mono uppercase tracking-[0.2em]">{cert.issuer}</p>
+                  
+                  {cert.credential_url && (
+                    <a
+                      href={cert.credential_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 flex items-center gap-2 text-[10px] font-mono text-muted-foreground/40 hover:text-foreground transition-all uppercase tracking-[0.2em] group/link"
+                    >
+                      Verify <ExternalLink className="w-3 h-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            </EvervaultCard>
+          </div>
+        </CenterBurstItem>
+      ))}
+    </CenterBurstStagger>
+  );
+}
+
+export default function CertificationsSection({ children }: CertificationsSectionProps) {
   return (
     <section id="certifications" className="section-padding">
       <div className="max-w-7xl mx-auto w-full">
@@ -27,39 +62,7 @@ export default function CertificationsSection({ certifications }: Certifications
           </CenterBurst>
         </div>
 
-        <CenterBurstStagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" staggerDelay={0.08}>
-          {certifications.map((cert) => (
-            <CenterBurstItem key={cert.id}>
-              <div className="group relative">
-                <EvervaultCard className="h-[300px]">
-                  <div className="flex flex-col h-full w-full justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-foreground/10 border border-border/30 flex items-center justify-center shrink-0">
-                        <Award className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0 text-left">
-                        <h3 className="text-lg font-bold line-clamp-2 leading-tight">{cert.title}</h3>
-                        <p className="text-xs text-muted-foreground/60 font-mono mt-1 uppercase tracking-wider">{cert.issuer}</p>
-                      </div>
-                    </div>
-
-                    {cert.credential_url && (
-                      <a
-                        href={cert.credential_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-6 flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground/5 hover:bg-foreground/10 border border-border/30 text-xs font-mono text-muted-foreground hover:text-foreground transition-all uppercase tracking-widest"
-                      >
-                        Verify Credential
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                </EvervaultCard>
-              </div>
-            </CenterBurstItem>
-          ))}
-        </CenterBurstStagger>
+        {children}
       </div>
     </section>
   );

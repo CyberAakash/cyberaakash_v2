@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import localFont from "next/font/local";
 import { Inter } from "next/font/google";
+import SmoothScroll from "@/components/SmoothScroll";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -59,9 +60,9 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${roashe.variable} ${designer.variable}`}
+      className={`${inter.variable} ${roashe.variable} ${designer.variable} overflow-x-hidden`}
     >
-      <body className="font-sans">
+      <body className="font-sans overflow-x-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -69,7 +70,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <SmoothScroll>
+            {children}
+          </SmoothScroll>
           <Toaster richColors position="bottom-right" />
         </ThemeProvider>
       </body>

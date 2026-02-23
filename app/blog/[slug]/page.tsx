@@ -15,6 +15,7 @@ export default async function BlogPostPage({
     .from("blogs")
     .select("*")
     .eq("slug", slug)
+    .eq("is_visible", true)
     .single();
 
   if (!blog) notFound();

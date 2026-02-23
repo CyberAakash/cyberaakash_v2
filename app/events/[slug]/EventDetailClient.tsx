@@ -26,7 +26,7 @@ export default function EventDetailClient({ event }: Props) {
           animate={{ opacity: 1, x: 0 }}
         >
           <Link
-            href="/#events"
+            href="/events"
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-12 group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />

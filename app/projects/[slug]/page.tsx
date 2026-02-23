@@ -18,6 +18,7 @@ export default async function ProjectDetailPage({
     .from("projects")
     .select("*")
     .eq("slug", slug)
+    .eq("is_visible", true)
     .single();
 
   if (!project) {
@@ -25,6 +26,7 @@ export default async function ProjectDetailPage({
       .from("projects")
       .select("*")
       .eq("id", slug)
+      .eq("is_visible", true)
       .single();
     project = byId;
   }

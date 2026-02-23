@@ -28,13 +28,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       toastOptions={{
         classNames: {
+          // Use CSS variables from the project theme instead of hardcoded slate colors
           toast:
-            "group toast group-[.toaster]:bg-white group-[.toaster]:text-slate-950 group-[.toaster]:border-slate-200 group-[.toaster]:shadow-lg dark:group-[.toaster]:bg-slate-950 dark:group-[.toaster]:text-slate-50 dark:group-[.toaster]:border-slate-800",
-          description: "group-[.toast]:text-slate-500 dark:group-[.toast]:text-slate-400",
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:shadow-lg group-[.toaster]:rounded-xl",
+          description: "group-[.toast]:text-muted-foreground group-[.toast]:text-sm",
           actionButton:
-            "group-[.toast]:bg-slate-900 group-[.toast]:text-slate-50 dark:group-[.toast]:bg-slate-50 dark:group-[.toast]:text-slate-900",
+            "group-[.toast]:bg-foreground group-[.toast]:text-background group-[.toast]:rounded-lg group-[.toast]:text-xs group-[.toast]:font-bold group-[.toast]:uppercase group-[.toast]:tracking-wider",
           cancelButton:
-            "group-[.toast]:bg-slate-100 group-[.toast]:text-slate-500 dark:group-[.toast]:bg-slate-800 dark:group-[.toast]:text-slate-400",
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:rounded-lg group-[.toast]:text-xs",
+          success: "group-[.toast]:text-emerald-500",
+          error: "group-[.toast]:text-red-500",
+          warning: "group-[.toast]:text-yellow-500",
+          info: "group-[.toast]:text-blue-400",
         },
       }}
       {...props}

@@ -14,6 +14,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .from("events")
     .select("title, description")
     .eq("slug", slug)
+    .eq("is_visible", true)
     .single();
 
   if (!event) return { title: "Event Not Found" };
@@ -32,6 +33,7 @@ export default async function EventPage({ params }: Props) {
     .from("events")
     .select("*")
     .eq("slug", slug)
+    .eq("is_visible", true)
     .single();
 
   if (!event) {
@@ -40,6 +42,7 @@ export default async function EventPage({ params }: Props) {
       .from("events")
       .select("*")
       .eq("id", slug)
+      .eq("is_visible", true)
       .single();
     
     if (!eventById) notFound();
