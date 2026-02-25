@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Blog } from "@/lib/types";
 import BlogListClient from "./BlogListClient";
+import ConnectAndFooter from "@/components/ConnectAndFooter";
 
 export const revalidate = 60;
 
@@ -13,5 +14,10 @@ export default async function BlogPage() {
     .eq("is_visible", true)
     .order("published_at", { ascending: false });
 
-  return <BlogListClient initialBlogs={blogs || []} />;
+  return (
+    <>
+      <BlogListClient initialBlogs={blogs || []} />
+      <ConnectAndFooter />
+    </>
+  );
 }

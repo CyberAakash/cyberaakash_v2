@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/#skills", label: "Skills" },
   { href: "/#experience", label: "Work" },
   { href: "/projects", label: "Projects" },
+  { href: "/gallery", label: "Gallery" },
   { href: "/blog", label: "Blog" },
 ];
 
@@ -27,9 +28,10 @@ export default function Navbar() {
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="fixed top-4 left-4 z-[100] w-auto max-w-[calc(100vw-2rem)]"
+        className="fixed top-4 inset-x-0 z-[100] flex justify-center pointer-events-none"
       >
-        <div className="flex items-center gap-1 px-2 py-2 rounded-full bg-background/70 backdrop-blur-xl border border-border/30 shadow-lg shadow-black/5 dark:shadow-white/5">
+        <div className="w-full max-w-7xl px-4 md:px-8 flex justify-center pointer-events-none">
+          <div className="flex items-center gap-1 px-2 py-2 rounded-full bg-background/70 backdrop-blur-xl border border-border/30 shadow-lg shadow-black/5 dark:shadow-white/5 pointer-events-auto">
           {/* Logo */}
           <Link
             href="/"
@@ -101,7 +103,8 @@ export default function Navbar() {
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
-      </motion.nav>
+      </div>
+    </motion.nav>
 
       {/* Mobile fullscreen overlay */}
       <AnimatePresence>

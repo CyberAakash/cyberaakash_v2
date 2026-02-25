@@ -20,6 +20,7 @@ import {
   FileText,
   Share2,
   Settings,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const navItems = [
   { href: "/admin/skills", label: "Skills", icon: Layers },
   { href: "/admin/experience", label: "Experience", icon: Briefcase },
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },
+  { href: "/admin/gallery", label: "Gallery", icon: ImageIcon },
   { href: "/admin/certifications", label: "Certs", icon: Award },
   { href: "/admin/socials", label: "Socials", icon: Share2 },
   { href: "/admin/events", label: "Events", icon: Calendar },
@@ -46,6 +48,7 @@ function NavItem({
   isCollapsed: boolean;
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const Icon = item.icon;
 
   return (
     <div className="relative group">
@@ -61,7 +64,7 @@ function NavItem({
           isCollapsed && "justify-center px-0"
         )}
       >
-        <item.icon className="w-4 h-4 shrink-0" />
+        <Icon className="w-4 h-4 shrink-0" />
         <AnimatePresence>
           {!isCollapsed && (
             <motion.span

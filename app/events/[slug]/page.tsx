@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import EventDetailClient from "./EventDetailClient";
 import { Metadata } from "next";
+import ConnectAndFooter from "@/components/ConnectAndFooter";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -46,8 +47,18 @@ export default async function EventPage({ params }: Props) {
       .single();
     
     if (!eventById) notFound();
-    return <EventDetailClient event={eventById} />;
+    return (
+      <>
+        <EventDetailClient event={eventById} />
+        <ConnectAndFooter />
+      </>
+    );
   }
 
-  return <EventDetailClient event={event} />;
+  return (
+    <>
+      <EventDetailClient event={event} />
+      <ConnectAndFooter />
+    </>
+  );
 }

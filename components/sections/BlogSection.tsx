@@ -6,6 +6,7 @@ import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card";
 import { Calendar, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import ShimmerText from "@/components/animations/ShimmerText";
 
 interface BlogSectionProps {
   children?: React.ReactNode;
@@ -71,18 +72,18 @@ export function BlogList({ blogs }: { blogs: Blog[] }) {
 export default function BlogSection({ children }: BlogSectionProps) {
   return (
     <section id="blog" className="section-padding min-h-screen flex flex-col justify-center">
-      <div className="max-w-7xl mx-auto w-full">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full">
         <CenterBurst>
-          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
+          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 text-center md:text-left">
             // writing
           </p>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-            <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight">
-              Latest Thoughts
+            <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight text-center md:text-left">
+              <ShimmerText shimmerColor="#f59e0b">Latest Thoughts</ShimmerText>
             </h2>
             <Link 
               href="/blog" 
-              className="group flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
+              className="group flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors justify-center md:justify-start"
             >
               View all articles <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </Link>

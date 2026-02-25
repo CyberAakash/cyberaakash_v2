@@ -7,6 +7,7 @@ import { ExternalLink, Github, Monitor, Smartphone, Layout, ArrowRight } from "l
 import Link from "next/link";
 import Image from "next/image";
 import { MobileFrame } from "@/components/ui/mobile-frame";
+import ShimmerText from "@/components/animations/ShimmerText";
 
 interface ProjectsSectionProps {
   children?: React.ReactNode;
@@ -114,14 +115,14 @@ export function ProjectList({ projects }: { projects: Project[] }) {
 export default function ProjectsSection({ children }: ProjectsSectionProps) {
   return (
     <section id="projects" className="section-padding min-h-screen flex flex-col justify-center">
-      <div className="max-w-7xl mx-auto w-full">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full">
         <CenterBurst>
-          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
+          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 text-center md:text-left">
             // projects
           </p>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight text-center md:text-left">
-              Things I&apos;ve Built
+              <ShimmerText shimmerColor="#10b981">Things I&apos;ve Built</ShimmerText>
             </h2>
             <Link 
               href="/projects" 

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import BlogPostClient from "./BlogPostClient";
+import ConnectAndFooter from "@/components/ConnectAndFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -29,5 +30,10 @@ export default async function BlogPostPage({
     .order("created_at", { ascending: false })
     .limit(2);
 
-  return <BlogPostClient blog={blog} related={related || []} />;
+  return (
+    <>
+      <BlogPostClient blog={blog} related={related || []} />
+      <ConnectAndFooter />
+    </>
+  );
 }

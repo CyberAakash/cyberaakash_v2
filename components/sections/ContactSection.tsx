@@ -2,6 +2,7 @@
 
 import CenterBurst from "@/components/animations/CenterBurst";
 import { ArrowUpRight, Github, Linkedin, Mail } from "lucide-react";
+import ShimmerText from "@/components/animations/ShimmerText";
 import type { About } from "@/lib/types";
 
 interface ContactSectionProps {
@@ -22,7 +23,7 @@ export default function ContactSection({ about }: ContactSectionProps) {
             // contact
           </p>
           <h2 className="text-4xl sm:text-5xl font-roashe tracking-tight mb-4">
-            Get In Touch
+            <ShimmerText shimmerColor="#ec4899">Get In Touch</ShimmerText>
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
             Have a project in mind or just want to chat? I&apos;m always open to new opportunities and ideas.

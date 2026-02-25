@@ -23,32 +23,40 @@ export function SocialList({ socials }: { socials: Social[] }) {
           <PinContainer
             title={social.name}
             href={social.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-[280px] h-[180px]"
+            className="w-full"
+            containerClassName="w-64 h-40"
           >
-            <div className="flex basis-full flex-col p-4 tracking-tight text-slate-100/50 sm:basis-1/2 w-[20rem] h-[12rem] ">
-              <h3 className="max-w-xs !pb-2 !m-0 font-bold  text-base text-slate-100">
-                {social.name}
-              </h3>
-              <div className="text-sm !m-0 !p-0 font-normal">
-                <span className="text-slate-500 ">
-                  {social.description || `Follow me on ${social.name}`}
-                </span>
+            <div 
+              onClick={() => window.open(social.url, "_blank")}
+              className="flex basis-full flex-col p-3 tracking-tight text-slate-100/50 sm:basis-1/2 w-56 h-36 cursor-pointer active:scale-95 transition-transform"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-xs text-slate-100 uppercase tracking-widest leading-none">
+                  {social.name}
+                </h3>
+                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-tighter">Profile</span>
               </div>
-              <div className="flex flex-1 w-full rounded-lg mt-4 bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500 overflow-hidden relative group">
+              
+              <div className="flex flex-1 w-full rounded-md bg-gradient-to-br from-violet-500/80 via-purple-500/80 to-blue-500/80 border border-white/5 overflow-hidden relative group/img shadow-2xl">
                 {social.image_url ? (
                   <img 
                     src={social.image_url} 
                     alt={social.name} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110 opacity-60 group-hover/img:opacity-100" 
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                     <Share2 className="w-12 h-12 text-white/20" />
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
+                     <Share2 className="w-6 h-6 text-white/20" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                <div className="absolute inset-0 bg-black/5 group-hover/img:bg-transparent transition-colors" />
+              </div>
+              
+              <div className="mt-2 flex items-center gap-2">
+                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-mono text-slate-400 truncate">
+                  {social.description || `Connect on ${social.name}`}
+                </p>
               </div>
             </div>
           </PinContainer>
@@ -60,8 +68,8 @@ export function SocialList({ socials }: { socials: Social[] }) {
 
 export default function SocialSection({ children }: SocialSectionProps) {
   return (
-    <section id="socials" className="py-20 relative overflow-hidden bg-background">
-      <div className="container px-4 mx-auto">
+    <section id="contact" className="py-20 relative overflow-hidden bg-background">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10">
         <div className="flex flex-col items-center mb-16 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-foreground/5 border border-foreground/10 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Share2 className="w-4 h-4 text-foreground/60" />

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Project } from "@/lib/types";
 import ProjectDetailClient from "./ProjectDetailClient";
+import ConnectAndFooter from "@/components/ConnectAndFooter";
 
 export const dynamic = "force-dynamic";
 
@@ -42,5 +43,10 @@ export default async function ProjectDetailPage({
     .eq("is_visible", true)
     .limit(3);
 
-  return <ProjectDetailClient project={project} related={related || []} />;
+  return (
+    <>
+      <ProjectDetailClient project={project} related={related || []} />
+      <ConnectAndFooter />
+    </>
+  );
 }

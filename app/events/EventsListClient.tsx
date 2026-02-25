@@ -7,6 +7,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import ShimmerText from "@/components/animations/ShimmerText";
 
 interface Props {
   initialEvents: Event[];
@@ -95,13 +96,13 @@ export default function EventsListClient({ initialEvents }: Props) {
             Back to home
           </Link>
 
-          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-3">
+          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-3 text-center md:text-left">
             // events & activities
           </p>
-          <h1 className="text-4xl sm:text-5xl font-roashe tracking-tight mb-4">
-            Things I&apos;ve Attended
+          <h1 className="text-4xl sm:text-5xl font-roashe tracking-tight mb-4 text-center md:text-left">
+            <ShimmerText shimmerColor="#6366f1">Things I&apos;ve Attended</ShimmerText>
           </h1>
-          <p className="text-muted-foreground text-lg max-w-xl">
+          <p className="text-muted-foreground text-lg max-w-xl mx-auto md:mx-0 text-center md:text-left">
             Hackathons, talks, workshops and community milestones I&apos;ve been part of.
           </p>
         </motion.div>
@@ -125,7 +126,7 @@ export default function EventsListClient({ initialEvents }: Props) {
           </div>
 
           {/* Type filter */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap justify-center md:justify-start">
             {eventTypes.map((type) => (
               <button
                 key={type}

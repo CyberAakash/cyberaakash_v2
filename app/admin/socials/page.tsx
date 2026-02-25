@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, X, Globe, Share2, Save, Eye, EyeOff } from "lucide-react";
+import { Plus, X, Globe, Share2, Save, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import type { Social } from "@/lib/types";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/image-upload";
@@ -56,10 +56,17 @@ export default function AdminSocials() {
     bulkDelete,
   } = useAdminActions(data, "socials", fetchSocials);
 
+  const [selectedSocial, setSelectedSocial] = useState<Social | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ name: "", description: "", url: "", image_url: "", is_visible: true });
     setEditing(null);
     setIsFormOpen(false);
+  };
+
+  const handleDisplayDetail = (social: Social) => {
+    setSelectedSocial(social);
   };
 
   const handleSave = async () => {
@@ -68,36 +75,46 @@ export default function AdminSocials() {
       return;
     }
 
-    const supabase = createClient();
-    const payload = {
-      name: form.name.trim(),
-      description: form.description.trim() || null,
-      url: form.url.trim(),
-      image_url: form.image_url || null,
-      is_visible: form.is_visible,
-    };
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim() || null,
+        url: form.url.trim(),
+        image_url: form.image_url || null,
+        is_visible: form.is_visible,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("socials").update(payload).eq("id", editing);
-      if (error) toast.error("Failed to update social: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("socials").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Social link updated");
         resetForm();
         fetchSocials();
-      }
-    } else {
-      const { error } = await supabase.from("socials").insert({
-        ...payload,
-        display_order: data.length,
-      });
-      if (error) toast.error("Failed to add social: " + error.message);
-      else {
+        if (selectedSocial?.id === editing) {
+          const { data: updated } = await supabase.from("socials").select("*").eq("id", editing).single();
+          if (updated) setSelectedSocial(updated);
+        }
+      } else {
+        const { error } = await supabase.from("socials").insert({
+          ...payload,
+          display_order: data.length,
+        });
+        if (error) throw error;
+        
         toast.success("Social link added");
         resetForm();
         fetchSocials();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (social: Social) => {
     setEditing(social.id);
@@ -112,18 +129,28 @@ export default function AdminSocials() {
   };
 
   const toggleVisibility = async (social: Social) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("socials")
-      .update({ is_visible: !social.is_visible })
-      .eq("id", social.id);
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("socials")
+        .update({ is_visible: !social.is_visible })
+        .eq("id", social.id);
 
-    if (error) toast.error("Error updating visibility");
-    else {
+      if (error) throw error;
+
       toast.success(social.is_visible ? "Hidden" : "Visible");
       fetchSocials();
+      if (selectedSocial?.id === social.id) {
+        setSelectedSocial({ ...selectedSocial, is_visible: !social.is_visible });
+      }
+    } catch (error: any) {
+      toast.error("Error updating visibility");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const columns = [
     {
@@ -275,14 +302,20 @@ export default function AdminSocials() {
         <DrawerFooter>
           <button 
             onClick={handleSave} 
-            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            <Save className="w-4 h-4" />
-            {editing ? "Update Link" : "Add Link"}
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Social" : "Add Social"}
           </button>
           <button 
             onClick={resetForm} 
-            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent transition-colors"
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50 transition-all"
           >
             Cancel
           </button>
@@ -290,10 +323,94 @@ export default function AdminSocials() {
         </DrawerContent>
       </Drawer>
 
+      <Drawer open={!!selectedSocial} onOpenChange={(open) => !open && setSelectedSocial(null)}>
+        <DrawerContent className="max-w-xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedSocial?.name}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  Social Presence
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const s = selectedSocial!;
+                    setSelectedSocial(null);
+                    startEdit(s);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedSocial!.id;
+                    setSelectedSocial(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden border border-border/50 bg-muted/30 p-4 flex items-center justify-center">
+                {selectedSocial?.image_url ? (
+                  <img src={selectedSocial.image_url} alt="" className="w-full h-full object-contain" />
+                ) : (
+                  <Share2 className="w-10 h-10 text-muted-foreground/20" />
+                )}
+              </div>
+
+              <div className="text-center space-y-2">
+                <p className="text-sm leading-relaxed max-w-sm mx-auto">{selectedSocial?.description || "No description provided."}</p>
+                <a 
+                  href={selectedSocial?.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-xs font-mono text-primary hover:underline underline-offset-4"
+                >
+                  <Globe className="w-3 h-3" />
+                  {selectedSocial?.url}
+                </a>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedSocial?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedSocial?.is_visible ? "Visible" : "Hidden"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedSocial?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedSocial?.is_archived ? "Archived" : "Live"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DrawerScrollArea>
+        </DrawerContent>
+      </Drawer>
+
       <AdminTable
         data={socials}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -303,6 +420,7 @@ export default function AdminSocials() {
         searchKey="name"
         searchPlaceholder="Filter socials..."
       />
+
     </div>
   );
 }

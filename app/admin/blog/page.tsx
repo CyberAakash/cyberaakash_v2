@@ -9,7 +9,7 @@ import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { cn } from "@/lib/utils";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { useAdminActions } from "@/lib/hooks/use-admin-actions";
-import { Plus, X, Image as ImageIcon, Eye, EyeOff, Save } from "lucide-react";
+import { Plus, X, Image as ImageIcon, Eye, EyeOff, Save, Pencil, Trash2 } from "lucide-react";
 import { 
   Drawer, 
   DrawerContent, 
@@ -61,45 +61,62 @@ export default function AdminBlogPage() {
     bulkDelete,
   } = useAdminActions(data, "blogs", fetchBlogs);
 
+  const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ title: "", slug: "", excerpt: "", content: "", tags: "", is_published: false, cover_image: "", is_visible: true });
     setEditing(null);
     setIsFormOpen(false);
   };
 
+  const handleDisplayDetail = (blog: Blog) => {
+    setSelectedBlog(blog);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    const payload = {
-      title: form.title,
-      slug: form.slug,
-      excerpt: form.excerpt,
-      content: form.content,
-      tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      is_published: form.is_published,
-      published_at: form.is_published ? new Date().toISOString() : null,
-      cover_image: form.cover_image || null,
-      is_visible: form.is_visible,
-    };
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        title: form.title,
+        slug: form.slug,
+        excerpt: form.excerpt,
+        content: form.content,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        is_published: form.is_published,
+        published_at: form.is_published ? new Date().toISOString() : null,
+        cover_image: form.cover_image || null,
+        is_visible: form.is_visible,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("blogs").update(payload).eq("id", editing);
-      if (error) toast.error("Failed to update blog: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("blogs").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Blog updated");
         resetForm();
         fetchBlogs();
-      }
-    } else {
-      const { error } = await supabase.from("blogs").insert(payload);
-      if (error) toast.error("Failed to add blog: " + error.message);
-      else {
-        toast.success("Blog added");
+        if (selectedBlog?.id === editing) {
+          const { data: updated } = await supabase.from("blogs").select("*").eq("id", editing).single();
+          if (updated) setSelectedBlog(updated);
+        }
+      } else {
+        const { error } = await supabase.from("blogs").insert(payload);
+        if (error) throw error;
+        
+        toast.success("Blog post created");
         resetForm();
         fetchBlogs();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (blog: Blog) => {
     setEditing(blog.id);
@@ -127,8 +144,12 @@ export default function AdminBlogPage() {
     else {
       toast.success(blog.is_visible ? "Hidden" : "Visible");
       fetchBlogs();
+      if (selectedBlog?.id === blog.id) {
+        setSelectedBlog({ ...selectedBlog, is_visible: !blog.is_visible });
+      }
     }
   };
+
 
   const columns = [
     {
@@ -343,14 +364,142 @@ export default function AdminBlogPage() {
 
           </DrawerScrollArea>
         <DrawerFooter>
-          <button type="button" onClick={handleSubmit} className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" />
-            {editing ? "Update Post" : "Add Post"}
+          <button 
+            type="button" 
+            onClick={handleSubmit} 
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Post" : "Add Post"}
           </button>
-          <button type="button" onClick={resetForm} className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent">
+          <button 
+            type="button" 
+            onClick={resetForm} 
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50"
+          >
             Cancel
           </button>
         </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={!!selectedBlog} onOpenChange={(open) => !open && setSelectedBlog(null)}>
+        <DrawerContent className="max-w-5xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedBlog?.title}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  Blog Post Details
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const b = selectedBlog!;
+                    setSelectedBlog(null);
+                    startEdit(b);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedBlog!.id;
+                    setSelectedBlog(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Cover Image</h4>
+                  <div className="aspect-video rounded-xl overflow-hidden border border-border/50 bg-muted/30">
+                    {selectedBlog?.cover_image ? (
+                      <img src={selectedBlog.cover_image} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground/20" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Excerpt</h4>
+                  <p className="text-sm leading-relaxed">{selectedBlog?.excerpt || "No excerpt provided."}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Slug</p>
+                    <p className="text-sm font-mono truncate">/{selectedBlog?.slug}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("w-2 h-2 rounded-full", selectedBlog?.is_published ? "bg-emerald-500" : "bg-amber-500")} />
+                      <p className="text-sm font-medium uppercase tracking-wider">
+                        {selectedBlog?.is_published ? "Published" : "Draft"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("w-2 h-2 rounded-full", selectedBlog?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                      <p className="text-sm font-medium uppercase tracking-wider">
+                        {selectedBlog?.is_visible ? "Visible" : "Hidden"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Created At</p>
+                    <p className="text-sm font-medium">{selectedBlog?.created_at ? new Date(selectedBlog.created_at).toLocaleDateString() : "N/A"}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Tags</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedBlog?.tags.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 rounded-md bg-foreground/5 text-[10px] font-mono border border-border/50">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-border/30">
+              <h4 className="text-sm font-bold uppercase tracking-widest font-roashe">Article Content</h4>
+              <div className="p-6 rounded-2xl border border-border/50 bg-background/50 prose prose-invert max-w-none prose-sm">
+                {selectedBlog?.content ? (
+                  <MarkdownRenderer content={selectedBlog.content} />
+                ) : (
+                  <p className="italic text-muted-foreground">No content provided.</p>
+                )}
+              </div>
+            </div>
+          </DrawerScrollArea>
         </DrawerContent>
       </Drawer>
 
@@ -358,6 +507,7 @@ export default function AdminBlogPage() {
         data={optimisticItems}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -367,6 +517,7 @@ export default function AdminBlogPage() {
         searchKey="title"
         searchPlaceholder="Filter articles..."
       />
+
     </div>
   );
 }

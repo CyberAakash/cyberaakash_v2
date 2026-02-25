@@ -61,17 +61,18 @@ export function useAdminActions<T extends AdminItem>(
             addOptimisticItem({ type: "ARCHIVE", payload: { id } });
             const { error } = await supabase
                 .from(tableName)
-                .update({ is_archived: true })
+                .update({ is_archived: true, is_visible: false }) // Hide when archived
                 .eq("id", id);
             if (error) {
                 toast.error("Failed to archive item");
                 // In a real app, you'd trigger a revalidation here to sync state
             } else {
-                toast.success("Item archived");
+                toast.success("Item archived and hidden");
                 onUpdate?.();
             }
         });
     };
+
 
     const restoreItem = async (id: string) => {
         startTransition(async () => {
@@ -107,12 +108,12 @@ export function useAdminActions<T extends AdminItem>(
             addOptimisticItem({ type: "BULK_ARCHIVE", payload: { ids } });
             const { error } = await supabase
                 .from(tableName)
-                .update({ is_archived: true })
+                .update({ is_archived: true, is_visible: false }) // Hide when archived
                 .in("id", ids);
             if (error) {
                 toast.error("Failed to archive items");
             } else {
-                toast.success(`${ids.length} items archived`);
+                toast.success(`${ids.length} items archived and hidden`);
                 onUpdate?.();
             }
         });

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import EventsListClient from "./EventsListClient";
 import type { Metadata } from "next";
+import ConnectAndFooter from "@/components/ConnectAndFooter";
 
 export const revalidate = 60;
 
@@ -19,5 +20,10 @@ export default async function EventsPage() {
     .order("event_date", { ascending: false })
     .limit(12);
 
-  return <EventsListClient initialEvents={events || []} />;
+  return (
+    <>
+      <EventsListClient initialEvents={events || []} />
+      <ConnectAndFooter />
+    </>
+  );
 }

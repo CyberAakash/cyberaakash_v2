@@ -61,10 +61,17 @@ export default function AdminSkills() {
     return Array.from(cats).sort();
   }, [data]);
 
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ name: "", category: "", image_url: "", is_visible: true });
     setEditing(null);
     setIsFormOpen(false);
+  };
+
+  const handleDisplayDetail = (skill: Skill) => {
+    setSelectedSkill(skill);
   };
 
   const handleSave = async () => {
@@ -73,35 +80,45 @@ export default function AdminSkills() {
       return;
     }
 
-    const supabase = createClient();
-    const payload = {
-      name: form.name.trim(),
-      category: form.category.trim().toLowerCase(),
-      image_url: form.image_url || null,
-      is_visible: form.is_visible,
-    };
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        name: form.name.trim(),
+        category: form.category.trim().toLowerCase(),
+        image_url: form.image_url || null,
+        is_visible: form.is_visible,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("skills").update(payload).eq("id", editing);
-      if (error) toast.error("Error updating skill: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("skills").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Skill updated");
         resetForm();
         fetchSkills();
-      }
-    } else {
-      const { error } = await supabase.from("skills").insert({
-        ...payload,
-        display_order: data.filter((s) => s.category === payload.category).length,
-      });
-      if (error) toast.error("Error adding skill: " + error.message);
-      else {
+        if (selectedSkill?.id === editing) {
+          const { data: updated } = await supabase.from("skills").select("*").eq("id", editing).single();
+          if (updated) setSelectedSkill(updated);
+        }
+      } else {
+        const { error } = await supabase.from("skills").insert({
+          ...payload,
+          display_order: data.filter((s) => s.category === payload.category).length,
+        });
+        if (error) throw error;
+        
         toast.success("Skill added");
         resetForm();
         fetchSkills();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (skill: Skill) => {
     setEditing(skill.id);
@@ -115,18 +132,29 @@ export default function AdminSkills() {
   };
 
   const toggleVisibility = async (skill: Skill) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("skills")
-      .update({ is_visible: !skill.is_visible })
-      .eq("id", skill.id);
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("skills")
+        .update({ is_visible: !skill.is_visible })
+        .eq("id", skill.id);
 
-    if (error) toast.error("Error updating visibility");
-    else {
+      if (error) throw error;
+
       toast.success(skill.is_visible ? "Skill hidden" : "Skill visible");
       fetchSkills();
+      if (selectedSkill?.id === skill.id) {
+        setSelectedSkill({ ...selectedSkill, is_visible: !skill.is_visible });
+      }
+    } catch (error: any) {
+      toast.error("Error updating visibility");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+
 
   const columns = [
     {
@@ -275,14 +303,20 @@ export default function AdminSkills() {
         <DrawerFooter>
           <button 
             onClick={handleSave} 
-            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {editing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {editing ? "Update Skill" : "Add Skill"}
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              editing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Skill" : "Add Skill"}
           </button>
           <button 
             onClick={resetForm} 
-            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent transition-colors"
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50 transition-all"
           >
             Cancel
           </button>
@@ -290,10 +324,89 @@ export default function AdminSkills() {
         </DrawerContent>
       </Drawer>
 
+      <Drawer open={!!selectedSkill} onOpenChange={(open) => !open && setSelectedSkill(null)}>
+        <DrawerContent className="max-w-xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedSkill?.name}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  Skill Details
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const s = selectedSkill!;
+                    setSelectedSkill(null);
+                    startEdit(s);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedSkill!.id;
+                    setSelectedSkill(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-24 h-24 rounded-2xl bg-muted flex items-center justify-center overflow-hidden border border-border/50 p-4">
+                {selectedSkill?.image_url ? (
+                  <img src={selectedSkill.image_url} alt={selectedSkill.name} className="w-full h-full object-contain" />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-muted-foreground/20" />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30 text-center">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Category</p>
+                  <p className="text-sm font-medium uppercase tracking-wider">{selectedSkill?.category}</p>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30 text-center">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedSkill?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedSkill?.is_visible ? "Visible" : "Hidden"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30 text-center">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedSkill?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedSkill?.is_archived ? "Archived" : "Live"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30 text-center">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Created At</p>
+                  <p className="text-sm font-medium">{selectedSkill?.created_at ? new Date(selectedSkill.created_at).toLocaleDateString() : "N/A"}</p>
+                </div>
+              </div>
+            </div>
+          </DrawerScrollArea>
+        </DrawerContent>
+      </Drawer>
+
       <AdminTable
         data={skills}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -303,6 +416,7 @@ export default function AdminSkills() {
         searchKey="name"
         searchPlaceholder="Filter skills..."
       />
+
     </div>
   );
 }

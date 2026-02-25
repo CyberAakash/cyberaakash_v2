@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Plus, X, Award, ExternalLink, Save, Eye, EyeOff } from "lucide-react";
+import { Plus, X, Award, ExternalLink, Save, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import type { Certification } from "@/lib/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -50,10 +50,17 @@ export default function AdminCertifications() {
     bulkDelete,
   } = useAdminActions(data, "certifications", fetchData);
 
+  const [selectedCert, setSelectedCert] = useState<Certification | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ title: "", issuer: "", credential_url: "", issue_date: "", is_visible: true });
     setEditing(null);
     setIsFormOpen(false);
+  };
+
+  const handleDisplayDetail = (cert: Certification) => {
+    setSelectedCert(cert);
   };
 
   const handleSave = async () => {
@@ -62,36 +69,46 @@ export default function AdminCertifications() {
       return;
     }
 
-    const supabase = createClient();
-    const payload = {
-      title: form.title, 
-      issuer: form.issuer,
-      credential_url: form.credential_url || null,
-      issue_date: form.issue_date || null,
-      is_visible: form.is_visible,
-    };
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        title: form.title, 
+        issuer: form.issuer,
+        credential_url: form.credential_url || null,
+        issue_date: form.issue_date || null,
+        is_visible: form.is_visible,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("certifications").update(payload).eq("id", editing);
-      if (error) toast.error("Error updating certification: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("certifications").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Certification updated");
         resetForm();
         fetchData();
-      }
-    } else {
-      const { error } = await supabase.from("certifications").insert({
-        ...payload,
-        display_order: data.length,
-      });
-      if (error) toast.error("Error adding certification: " + error.message);
-      else {
+        if (selectedCert?.id === editing) {
+          const { data: updated } = await supabase.from("certifications").select("*").eq("id", editing).single();
+          if (updated) setSelectedCert(updated);
+        }
+      } else {
+        const { error } = await supabase.from("certifications").insert({
+          ...payload,
+          display_order: data.length,
+        });
+        if (error) throw error;
+        
         toast.success("Certification added");
         resetForm();
         fetchData();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (cert: Certification) => {
     setEditing(cert.id);
@@ -106,18 +123,28 @@ export default function AdminCertifications() {
   };
 
   const toggleVisibility = async (cert: Certification) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("certifications")
-      .update({ is_visible: !cert.is_visible })
-      .eq("id", cert.id);
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("certifications")
+        .update({ is_visible: !cert.is_visible })
+        .eq("id", cert.id);
 
-    if (error) toast.error("Error updating visibility");
-    else {
+      if (error) throw error;
+
       toast.success(cert.is_visible ? "Hidden" : "Visible");
       fetchData();
+      if (selectedCert?.id === cert.id) {
+        setSelectedCert({ ...selectedCert, is_visible: !cert.is_visible });
+      }
+    } catch (error: any) {
+      toast.error("Error updating visibility");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const columns = [
     {
@@ -232,14 +259,112 @@ export default function AdminCertifications() {
             </div>
           </DrawerScrollArea>
         <DrawerFooter>
-          <button onClick={handleSave} className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" />
-            {editing ? "Update Cert" : "Add Cert"}
+          <button 
+            onClick={handleSave} 
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Certification" : "Add Certification"}
           </button>
-          <button onClick={resetForm} className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent">
+          <button 
+            onClick={resetForm} 
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50 transition-all"
+          >
             Cancel
           </button>
         </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={!!selectedCert} onOpenChange={(open) => !open && setSelectedCert(null)}>
+        <DrawerContent className="max-w-xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedCert?.title}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  Credential Verification
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const c = selectedCert!;
+                    setSelectedCert(null);
+                    startEdit(c);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedCert!.id;
+                    setSelectedCert(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="flex flex-col items-center gap-6">
+              <div className="w-full aspect-video rounded-2xl overflow-hidden border border-border/50 bg-muted/30 text-muted-foreground/40 flex items-center justify-center">
+                <Award className="w-12 h-12" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 w-full">
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Issuer</p>
+                  <p className="text-sm font-medium">{selectedCert?.issuer}</p>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Issue Date</p>
+                  <p className="text-sm font-medium">{selectedCert?.issue_date ? new Date(selectedCert.issue_date).toLocaleDateString() : "N/A"}</p>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedCert?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedCert?.is_visible ? "Visible" : "Hidden"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedCert?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedCert?.is_archived ? "Archived" : "Live"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedCert?.credential_url && (
+                <a 
+                  href={selectedCert.credential_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl border border-primary/20 bg-primary/5 text-primary text-xs font-bold uppercase tracking-widest text-center hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Verify Credential
+                </a>
+              )}
+            </div>
+          </DrawerScrollArea>
         </DrawerContent>
       </Drawer>
 
@@ -247,6 +372,7 @@ export default function AdminCertifications() {
         data={certs}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -259,3 +385,4 @@ export default function AdminCertifications() {
     </div>
   );
 }
+

@@ -52,6 +52,9 @@ export default function AdminEvents() {
     bulkDelete,
   } = useAdminActions(data, "events", fetchData);
 
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ 
       title: "", slug: "", description: "", content: "", 
@@ -63,46 +66,61 @@ export default function AdminEvents() {
     setIsFormOpen(false);
   };
 
+  const handleDisplayDetail = (e: Event) => {
+    setSelectedEvent(e);
+  };
+
   const handleSave = async () => {
     if (!form.title.trim() || !form.event_date) {
       toast.error("Title and date are required");
       return;
     }
-    const supabase = createClient();
-    const payload = {
-      title: form.title,
-      slug: form.slug || form.title.toLowerCase().replace(/\s+/g, "-") + "-" + Math.random().toString(36).substr(2, 4),
-      description: form.description || null,
-      content: form.content || null,
-      event_date: form.event_date,
-      type: form.type,
-      is_visible: form.is_visible,
-      is_featured: form.is_featured,
-      images: form.images.filter(Boolean),
-      image_url: form.images[0] || null,
-    };
 
-    if (editing) {
-      const { error } = await supabase.from("events").update(payload).eq("id", editing);
-      if (error) toast.error("Error updating event: " + error.message);
-      else {
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        title: form.title,
+        slug: form.slug || form.title.toLowerCase().replace(/\s+/g, "-") + "-" + Math.random().toString(36).substr(2, 4),
+        description: form.description || null,
+        content: form.content || null,
+        event_date: form.event_date,
+        type: form.type,
+        is_visible: form.is_visible,
+        is_featured: form.is_featured,
+        images: form.images.filter(Boolean),
+        image_url: form.images[0] || null,
+      };
+
+      if (editing) {
+        const { error } = await supabase.from("events").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Event updated");
         resetForm();
         fetchData();
-      }
-    } else {
-      const { error } = await supabase.from("events").insert({
-        ...payload,
-        is_archived: false
-      });
-      if (error) toast.error("Error adding event: " + error.message);
-      else {
+        if (selectedEvent?.id === editing) {
+          const { data: updated } = await supabase.from("events").select("*").eq("id", editing).single();
+          if (updated) setSelectedEvent(updated);
+        }
+      } else {
+        const { error } = await supabase.from("events").insert({
+          ...payload,
+          is_archived: false
+        });
+        if (error) throw error;
+        
         toast.success("Event added");
         resetForm();
         fetchData();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (e: Event) => {
     setEditing(e.id);
@@ -121,18 +139,28 @@ export default function AdminEvents() {
   };
 
   const toggleVisibility = async (e: Event) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("events")
-      .update({ is_visible: !e.is_visible })
-      .eq("id", e.id);
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("events")
+        .update({ is_visible: !e.is_visible })
+        .eq("id", e.id);
 
-    if (error) toast.error("Error updating visibility");
-    else {
+      if (error) throw error;
+
       toast.success(e.is_visible ? "Hidden" : "Visible");
       fetchData();
+      if (selectedEvent?.id === e.id) {
+        setSelectedEvent({ ...selectedEvent, is_visible: !e.is_visible });
+      }
+    } catch (error: any) {
+      toast.error("Error updating visibility");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const addImage = () => setForm({ ...form, images: [...form.images, ""] });
   const updateImage = (i: number, url: string) => {
@@ -232,7 +260,7 @@ export default function AdminEvents() {
               <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground text-center block">Gallery & Assets</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {form.images.map((img: string, i: number) => (
-                  <div key={i} className="p-4 rounded-xl border border-border/50 bg-background/50 space-y-3 relative group">
+                  <div key={img || i} className="p-4 rounded-xl border border-border/50 bg-background/50 space-y-3 relative group">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-[9px] font-mono text-muted-foreground uppercase">Slot {i + 1}</span>
                       <div className="flex gap-1 group-hover:opacity-100 transition-opacity">
@@ -342,14 +370,129 @@ export default function AdminEvents() {
             </div>
           </DrawerScrollArea>
         <DrawerFooter>
-          <button onClick={handleSave} className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" />
-            {editing ? "Update Event" : "Create Event"}
+          <button 
+            onClick={handleSave} 
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Event" : "Create Event"}
           </button>
-          <button onClick={resetForm} className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent transition-colors">
+          <button 
+            onClick={resetForm} 
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50 transition-all"
+          >
             Cancel
           </button>
         </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+        <DrawerContent className="max-w-4xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedEvent?.title}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  {selectedEvent?.type} · Event Log
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const e = selectedEvent!;
+                    setSelectedEvent(null);
+                    startEdit(e);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedEvent!.id;
+                    setSelectedEvent(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Quick Summary</h4>
+                  <p className="text-sm leading-relaxed">{selectedEvent?.description || "No short description."}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Media Assets</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedEvent?.images.map((img, i) => (
+                      <div key={i} className="aspect-video rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {(!selectedEvent?.images || selectedEvent.images.length === 0) && (
+                      <div className="aspect-video rounded-lg overflow-hidden border border-border/50 bg-muted/30 flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-muted-foreground/20" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Event Date</p>
+                    <p className="text-sm font-medium">{selectedEvent?.event_date && new Date(selectedEvent.event_date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("w-2 h-2 rounded-full", selectedEvent?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                      <p className="text-sm font-medium uppercase tracking-wider">
+                        {selectedEvent?.is_archived ? "Archived" : "Active"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedEvent?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedEvent?.is_visible ? "Visible" : "Hidden"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-border/30">
+              <h4 className="text-sm font-bold uppercase tracking-widest font-roashe text-foreground">Detailed Content</h4>
+              <div className="p-6 rounded-2xl border border-border/50 bg-background/50 prose prose-invert max-w-none prose-sm">
+                {selectedEvent?.content ? (
+                  <MarkdownRenderer content={selectedEvent.content} />
+                ) : (
+                  <p className="italic text-muted-foreground">No detailed content provided.</p>
+                )}
+              </div>
+            </div>
+          </DrawerScrollArea>
         </DrawerContent>
       </Drawer>
 
@@ -357,6 +500,7 @@ export default function AdminEvents() {
         data={events}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -366,6 +510,7 @@ export default function AdminEvents() {
         searchKey="title"
         searchPlaceholder="Filter events..."
       />
+
     </div>
   );
 }

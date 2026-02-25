@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Upload, X, Loader2, CheckCircle2 } from "lucide-react";
+import { Upload, X, Loader2, CheckCircle2, Trash2, Maximize2, Repeat } from "lucide-react";
 import { toast } from "sonner";
+import { FileUpload } from "@/components/ui/file-upload";
+import { 
+  Drawer, 
+  DrawerContent, 
+  DrawerHeader, 
+  DrawerTitle, 
+  DrawerDescription,
+} from "@/components/ui/drawer";
 
 interface ImageUploadProps {
-  bucket: "project-images" | "blog-images" | "skill-images" | "social-images" | "cert-images" | "event-images";
+  bucket: "project-images" | "blog-images" | "skill-images" | "social-images" | "cert-images" | "event-images" | "gallery-images";
   onUpload: (url: string) => void;
   value?: string;
   /** Max dimension (px) to which the image is downscaled before encoding.
@@ -96,12 +104,18 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<"idle" | "converting" | "uploading">("idle");
   const [preview, setPreview] = useState<string | null>(value || null);
+  const [stats, setStats] = useState<{name: string, originalKB: number, convertedKB: number, savings: number} | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  // Sync with value prop for reordering or external changes
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
+
+  const handleUpload = async (files: File[]) => {
+    const file = files[0];
     if (!file) return;
-    // Reset so the same file can be re-selected after removal
-    e.target.value = "";
 
     if (!file.type.startsWith("image/") && !isHeic(file)) {
       toast.error("Please select an image file");
@@ -144,11 +158,17 @@ export function ImageUpload({
         .getPublicUrl(fileName);
 
       setPreview(publicUrl);
+      setStats({
+        name: file.name,
+        originalKB,
+        convertedKB,
+        savings
+      });
       onUpload(publicUrl);
 
       toast.success(
         savings > 0
-          ? `Uploaded ✓  ${originalKB} KB → ${convertedKB} KB (−${savings}% as WebP)`
+          ? `Uploaded ✓  ${originalKB} KB → ${convertedKB} KB (−${savings}%)`
           : `Uploaded as WebP (${convertedKB} KB)`
       );
     } catch (err: any) {
@@ -159,9 +179,28 @@ export function ImageUpload({
     }
   };
 
-  const removeImage = () => {
+  const removeImage = async () => {
+    // Delete from Supabase Storage to save space
+    if (preview && preview.includes("supabase.co")) {
+      try {
+        const fileNameMatch = preview.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          const fileName = decodeURIComponent(fileNameMatch[1]);
+          const supabase = createClient();
+          const { error } = await supabase.storage.from(bucket).remove([fileName]);
+          if (error) {
+            console.error("Storage deletion error:", error);
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing/deleting from storage:", e);
+      }
+    }
+
     setPreview(null);
+    setStats(null);
     onUpload("");
+    toast.success("Image removed");
   };
 
   const statusLabel =
@@ -169,74 +208,116 @@ export function ImageUpload({
     progress === "uploading"  ? "Uploading…"  : "Upload";
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        {preview ? (
-          <div className="relative group w-32 h-32 rounded-xl overflow-hidden border border-border bg-muted/20">
-            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-            {/* Hover overlay */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <button
-                onClick={removeImage}
-                className="p-1.5 bg-red-500 text-white rounded-full"
+    <>
+      <div className="space-y-4">
+        <div className="relative">
+          {preview && !uploading ? (
+            <div className="relative group w-full rounded-2xl border border-border/50 bg-background/50 overflow-hidden shadow-sm">
+              {/* Image Preview Area */}
+              <div 
+                className="relative aspect-[4/3] w-full bg-muted/30 overflow-hidden cursor-pointer flex items-center justify-center group/img" 
+                onClick={() => setIsDrawerOpen(true)}
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {/* WebP badge */}
-            <span className="absolute bottom-1 left-1 text-[9px] font-mono bg-black/60 text-white px-1.5 py-0.5 rounded uppercase tracking-wider">
-              webp
-            </span>
-          </div>
-        ) : (
-          <label className={`w-32 h-32 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed transition-all cursor-pointer
-            ${uploading
-              ? "border-border bg-muted/10 cursor-wait"
-              : "border-border hover:border-foreground/30 hover:bg-accent/20"
-            }`}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground text-center px-2">
-                  {statusLabel}
-                </span>
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5 text-muted-foreground" />
-                <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                  Upload
-                </span>
-              </>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              disabled={uploading}
-              className="hidden"
-            />
-          </label>
-        )}
+                <img 
+                  src={preview} 
+                  alt="preview" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105" 
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                   <div className="flex items-center gap-2 text-white bg-black/60 px-3 py-1.5 rounded-lg backdrop-blur-md">
+                     <Maximize2 className="w-4 h-4" />
+                     <span className="text-xs font-mono uppercase tracking-widest">Preview</span>
+                   </div>
+                </div>
+              </div>
 
-        <div className="flex-1 space-y-1.5">
-          {preview ? (
-            <div className="flex items-center gap-1.5 text-xs text-emerald-500">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Image ready
+              {/* Hover Actions */}
+              <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <input 
+                   type="file" 
+                   accept="image/*"
+                   className="hidden" 
+                   ref={fileInputRef} 
+                   onChange={(e) => {
+                     if (e.target.files?.length) {
+                       handleUpload(Array.from(e.target.files));
+                     }
+                   }} 
+                 />
+                 <button 
+                   onClick={() => fileInputRef.current?.click()} 
+                   className="p-2 bg-background/80 hover:bg-background text-foreground backdrop-blur rounded-lg shadow-sm border border-border/50 transition-colors" 
+                   title="Change Image"
+                 >
+                   <Repeat className="w-3.5 h-3.5" />
+                 </button>
+                 <button 
+                   onClick={removeImage} 
+                   className="p-2 bg-red-500/80 hover:bg-red-500 text-white backdrop-blur rounded-lg shadow-sm border border-red-500/50 transition-colors" 
+                   title="Remove Image"
+                 >
+                   <Trash2 className="w-3.5 h-3.5" />
+                 </button>
+              </div>
+
+              {/* Details */}
+              <div className="p-3 border-t border-border/50 bg-muted/10">
+                <div className="flex items-center gap-2">
+                   <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                   <div className="min-w-0 flex-1">
+                     {stats ? (
+                       <>
+                         <p className="text-xs font-medium truncate text-foreground/90">{stats.name}</p>
+                         <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                           {stats.convertedKB} KB <span className="text-emerald-500/80">(-{stats.savings}%)</span>
+                         </p>
+                       </>
+                     ) : (
+                       <>
+                         <p className="text-xs font-medium truncate text-foreground/90">Image Uploaded</p>
+                         <p className="text-[10px] font-mono text-muted-foreground mt-0.5 text-emerald-500/80">WebP Optimized</p>
+                       </>
+                     )}
+                   </div>
+                </div>
+              </div>
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              {uploading ? statusLabel : "Select any image to upload"}
-            </p>
+            <FileUpload 
+              value={preview || undefined} 
+              loading={uploading} 
+              onChange={handleUpload} 
+            />
           )}
-          <p className="text-[10px] text-muted-foreground/50 font-mono leading-relaxed">
-            Any format accepted (PNG, JPG, HEIC, GIF…)<br />
-            Auto-converted to WebP · Max 30 MB
-          </p>
         </div>
+
+        {!preview && (
+          <div className="flex-1 space-y-1.5 text-center px-4">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60">
+              {uploading ? statusLabel : "Select Image to Begin"}
+            </p>
+            <p className="text-[10px] text-muted-foreground/40 font-mono leading-relaxed max-w-xs mx-auto">
+              Auto-optimised for WebP · Pro-grade compression · Max 30MB
+            </p>
+          </div>
+        )}
       </div>
-    </div>
+
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerContent className="max-w-5xl mx-auto h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle className="text-2xl font-roashe">Image Preview</DrawerTitle>
+            <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+              Full Resolution View
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="flex-1 overflow-auto p-6 flex flex-col items-center justify-center">
+            <div className="relative w-full h-full flex items-center justify-center bg-muted/10 rounded-2xl border border-border/50 overflow-hidden">
+               <img src={preview || ""} alt="Full size preview" className="max-w-full max-h-full object-contain" />
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

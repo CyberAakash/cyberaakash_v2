@@ -25,22 +25,24 @@ export default function HeroSection() {
 
       {/* Scroll indicator only */}
       <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
+        className="absolute bottom-8 inset-x-0 z-20 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
       >
-        <motion.a
-          href="#about"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          className="flex flex-col items-center gap-1 text-muted-foreground/50"
-        >
-          <span className="text-[10px] font-mono uppercase tracking-[0.3em]">
-            Scroll
-          </span>
-          <ChevronDown className="w-4 h-4" />
-        </motion.a>
+        <div className="max-w-7xl mx-auto w-full px-4 md:px-8 flex justify-center md:justify-start">
+          <motion.a
+            href="#about"
+            animate={{ y: [0, 8, 0] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            className="flex flex-col items-center gap-1 text-muted-foreground/50 pointer-events-auto"
+          >
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em]">
+              Scroll
+            </span>
+            <ChevronDown className="w-4 h-4" />
+          </motion.a>
+        </div>
       </motion.div>
     </section>
   );

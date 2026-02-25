@@ -101,69 +101,94 @@ export default async function HomePage() {
   const [
     { data: about },
     { data: configData },
+    { count: projectsCount },
+    { count: skillsCount },
+    { data: experiences }
   ] = await Promise.all([
     supabase.from("about").select("*").single(),
     supabase.from("site_config").select("*"),
+    supabase.from("projects").select("*", { count: 'exact', head: true }).eq("is_visible", true),
+    supabase.from("skills").select("*", { count: 'exact', head: true }).eq("is_visible", true),
+    supabase.from("experiences").select("start_date").order("start_date", { ascending: true })
   ]);
 
   const projectsLimit = parseInt(configData?.find(c => c.key === 'featured_projects_limit')?.value || '6');
   const blogsLimit = parseInt(configData?.find(c => c.key === 'featured_blogs_limit')?.value || '6');
   const eventsLimit = parseInt(configData?.find(c => c.key === 'featured_events_limit')?.value || '4');
+  const coffeeCount = configData?.find(c => c.key === 'coffee_count')?.value || '250+';
+
+  // Calculate years of experience
+  let yearsCoding = "3+";
+  if (experiences && experiences.length > 0) {
+    const start = new Date(experiences[0].start_date);
+    const now = new Date();
+    const diff = now.getFullYear() - start.getFullYear();
+    yearsCoding = `${diff}+`;
+  }
+
+  const stats = {
+    projects: `${projectsCount || 0}+`,
+    tech: `${skillsCount || 0}+`,
+    years: yearsCoding,
+    coffee: coffeeCount,
+  };
 
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
       
-      <Suspense fallback={<HeroSkeleton />}>
-        <HeroSection />
-      </Suspense>
-      
-      <AboutSection about={about}>
-        {/* About section internal parts can also be suspended if needed, 
-            but for now we pass the static about data */}
-      </AboutSection>
-
-      <SkillsSection>
-        <Suspense fallback={<SkillSkeleton />}>
-          <SkillsLoader />
+      <div className="mx-auto px-4 md:px-8">
+        <Suspense fallback={<HeroSkeleton />}>
+          <HeroSection />
         </Suspense>
-      </SkillsSection>
+        
+        <AboutSection about={about} stats={stats}>
+          {/* About section internal parts can also be suspended if needed, 
+              but for now we pass the static about data */}
+        </AboutSection>
 
-      <ProjectsSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <ProjectListLoader limit={projectsLimit} />
-        </Suspense>
-      </ProjectsSection>
+        <SkillsSection>
+          <Suspense fallback={<SkillSkeleton />}>
+            <SkillsLoader />
+          </Suspense>
+        </SkillsSection>
 
-      <ExperienceSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <ExperienceLoader />
-        </Suspense>
-      </ExperienceSection>
+        <ProjectsSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <ProjectListLoader limit={projectsLimit} />
+          </Suspense>
+        </ProjectsSection>
 
-      <BlogSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <BlogListLoader limit={blogsLimit} />
-        </Suspense>
-      </BlogSection>
+        <ExperienceSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <ExperienceLoader />
+          </Suspense>
+        </ExperienceSection>
 
-      <CertificationsSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <CertificationsLoader />
-        </Suspense>
-      </CertificationsSection>
+        <BlogSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <BlogListLoader limit={blogsLimit} />
+          </Suspense>
+        </BlogSection>
 
-      <EventsSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <EventListLoader limit={eventsLimit} />
-        </Suspense>
-      </EventsSection>
+        <CertificationsSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <CertificationsLoader />
+          </Suspense>
+        </CertificationsSection>
 
-      <SocialSection>
-        <Suspense fallback={<SectionSkeleton />}>
-          <SocialsLoader />
-        </Suspense>
-      </SocialSection>
+        <EventsSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <EventListLoader limit={eventsLimit} />
+          </Suspense>
+        </EventsSection>
+
+        <SocialSection>
+          <Suspense fallback={<SectionSkeleton />}>
+            <SocialsLoader />
+          </Suspense>
+        </SocialSection>
+      </div>
 
       <Footer about={about} />
     </main>

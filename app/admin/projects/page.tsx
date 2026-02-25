@@ -50,6 +50,9 @@ export default function AdminProjects() {
     bulkDelete,
   } = useAdminActions(data, "projects", fetchData);
 
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ 
       title: "", description: "", long_description: "", tech_stack: "", 
@@ -60,45 +63,60 @@ export default function AdminProjects() {
     setIsFormOpen(false);
   };
 
+  const handleDisplayDetail = (p: Project) => {
+    setSelectedProject(p);
+  };
+
   const handleSave = async () => {
     if (!form.title.trim()) {
       toast.error("Project title is required");
       return;
     }
-    const supabase = createClient();
-    const payload = {
-      title: form.title, 
-      description: form.description, 
-      long_description: form.long_description || null,
-      category: form.category,
-      live_url: form.live_url || null, 
-      github_url: form.github_url || null,
-      is_featured: form.is_featured,
-      images: form.images.filter(Boolean),
-      image_url: form.images[0] || null,
-      tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
-      is_visible: form.is_visible,
-      display_order: editing ? undefined : data.length,
-    };
+    
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        title: form.title, 
+        description: form.description, 
+        long_description: form.long_description || null,
+        category: form.category,
+        live_url: form.live_url || null, 
+        github_url: form.github_url || null,
+        is_featured: form.is_featured,
+        images: form.images.filter(Boolean),
+        image_url: form.images[0] || null,
+        tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
+        is_visible: form.is_visible,
+        display_order: editing ? undefined : data.length,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("projects").update(payload).eq("id", editing);
-      if (error) toast.error("Error updating project: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("projects").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Project updated");
         resetForm();
         fetchData();
-      }
-    } else {
-      const { error } = await supabase.from("projects").insert(payload);
-      if (error) toast.error("Error adding project: " + error.message);
-      else {
+        if (selectedProject?.id === editing) {
+          const { data: updated } = await supabase.from("projects").select("*").eq("id", editing).single();
+          if (updated) setSelectedProject(updated);
+        }
+      } else {
+        const { error } = await supabase.from("projects").insert(payload);
+        if (error) throw error;
+        
         toast.success("Project added");
         resetForm();
         fetchData();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (p: Project) => {
     setEditing(p.id);
@@ -128,8 +146,12 @@ export default function AdminProjects() {
     else {
       toast.success(p.is_visible ? "Hidden" : "Visible");
       fetchData();
+      if (selectedProject?.id === p.id) {
+        setSelectedProject({ ...selectedProject, is_visible: !p.is_visible });
+      }
     }
   };
+
 
   const addImage = () => setForm({ ...form, images: [...form.images, ""] });
   const updateImage = (i: number, url: string) => {
@@ -235,7 +257,7 @@ export default function AdminProjects() {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {form.images.map((img, i) => (
-                  <div key={i} className="p-4 rounded-xl border border-border/50 bg-background/50 space-y-3 relative group">
+                  <div key={img || i} className="p-4 rounded-xl border border-border/50 bg-background/50 space-y-3 relative group">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-mono text-muted-foreground">Screen {i + 1}</span>
                       <div className="flex gap-1">
@@ -340,14 +362,137 @@ export default function AdminProjects() {
 
           </DrawerScrollArea>
         <DrawerFooter>
-          <button onClick={handleSave} className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" />
-            {editing ? "Update Project" : "Create Project"}
+          <button 
+            onClick={handleSave} 
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Project" : "Create Project"}
           </button>
-          <button onClick={resetForm} className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent">
+          <button 
+            onClick={resetForm} 
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50"
+          >
             Cancel
           </button>
         </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={!!selectedProject} onOpenChange={(open) => !open && setSelectedProject(null)}>
+        <DrawerContent className="max-w-5xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedProject?.title}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  Project Details
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const p = selectedProject!;
+                    setSelectedProject(null);
+                    startEdit(p);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedProject!.id;
+                    setSelectedProject(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Gallery</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedProject?.images?.map((img, i) => (
+                      <div key={i} className="aspect-video rounded-lg overflow-hidden border border-border/50">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Short Description</h4>
+                  <p className="text-sm leading-relaxed">{selectedProject?.description}</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Category</p>
+                    <p className="text-sm font-medium uppercase tracking-wider">{selectedProject?.category}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Live URL</p>
+                    {selectedProject?.live_url ? (
+                      <a href={selectedProject.live_url} target="_blank" className="text-sm font-medium text-primary hover:underline truncate block">
+                        {selectedProject.live_url}
+                      </a>
+                    ) : <p className="text-sm italic text-muted-foreground">Not set</p>}
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("w-2 h-2 rounded-full", selectedProject?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                      <p className="text-sm font-medium uppercase tracking-wider">
+                        {selectedProject?.is_archived ? "Archived" : "Live"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Featured</p>
+                    <p className="text-sm font-medium uppercase tracking-wider">{selectedProject?.is_featured ? "Yes" : "No"}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Tech Stack</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedProject?.tech_stack.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 rounded-md bg-foreground/5 text-[10px] font-mono border border-border/50">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-6 border-t border-border/30">
+              <h4 className="text-sm font-bold uppercase tracking-widest font-roashe">Detailed Content</h4>
+              <div className="p-6 rounded-2xl border border-border/50 bg-background/50 prose prose-invert max-w-none prose-sm">
+                {selectedProject?.long_description ? (
+                  <MarkdownRenderer content={selectedProject.long_description} />
+                ) : (
+                  <p className="italic text-muted-foreground">No detailed content provided.</p>
+                )}
+              </div>
+            </div>
+          </DrawerScrollArea>
         </DrawerContent>
       </Drawer>
 
@@ -355,6 +500,7 @@ export default function AdminProjects() {
         data={optimisticItems}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -364,6 +510,7 @@ export default function AdminProjects() {
         searchKey="title"
         searchPlaceholder="Filter projects..."
       />
+
     </div>
   );
 }

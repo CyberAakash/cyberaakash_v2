@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useDebounce } from "@/lib/hooks/use-debounce";
+import ShimmerText from "@/components/animations/ShimmerText";
 
 interface Props {
   initialBlogs: Blog[];
@@ -95,15 +96,15 @@ export default function BlogListClient({ initialBlogs }: Props) {
           animate={{ opacity: 1, y: 0 }}
           className="mb-12"
         >
-          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
+          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 text-center md:text-left">
             // blog
           </p>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
+            <div className="text-center md:text-left">
               <h1 className="text-4xl sm:text-5xl font-roashe tracking-tight mb-4">
-                Thoughts & Writing
+                <ShimmerText shimmerColor="#f59e0b">Thoughts & Writing</ShimmerText>
               </h1>
-              <p className="text-muted-foreground max-w-md">
+              <p className="text-muted-foreground max-w-md mx-auto md:mx-0">
                 Articles on development, technology, and building things that matter.
               </p>
             </div>

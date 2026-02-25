@@ -32,6 +32,7 @@ interface AdminTableProps<T> {
   data: T[];
   columns: Column<T>[];
   onEdit: (item: T) => void;
+  onView?: (item: T) => void;
   onArchive: (id: string) => void;
   onRestore: (id: string) => void;
   onDelete: (id: string) => void;
@@ -46,6 +47,7 @@ export function AdminTable<T extends { id: string; is_archived?: boolean }>({
   data,
   columns,
   onEdit,
+  onView,
   onArchive,
   onRestore,
   onDelete,
@@ -221,12 +223,14 @@ export function AdminTable<T extends { id: string; is_archived?: boolean }>({
                 paginatedData.map((item) => (
                   <tr 
                     key={item.id} 
+                    onClick={() => onView?.(item)}
                     className={cn(
                       "group hover:bg-muted/30 transition-colors",
+                      onView && "cursor-pointer",
                       selectedIds.includes(item.id) && "bg-muted/50"
                     )}
                   >
-                    <td className="p-4">
+                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => toggleSelect(item.id)}
                         className="text-muted-foreground hover:text-foreground transition-colors"
@@ -245,7 +249,7 @@ export function AdminTable<T extends { id: string; is_archived?: boolean }>({
                           : (item[col.accessorKey] as React.ReactNode)}
                       </td>
                     ))}
-                    <td className="p-4 text-right">
+                    <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors">

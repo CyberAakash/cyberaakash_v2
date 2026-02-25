@@ -47,10 +47,17 @@ export default function AdminExperience() {
     bulkDelete,
   } = useAdminActions(data, "experiences", fetchData);
 
+  const [selectedExperience, setSelectedExperience] = useState<Experience | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const resetForm = () => {
     setForm({ role: "", company: "", type: "full-time", start_date: "", end_date: "", bullets: [""], tech_stack: "", is_visible: true });
     setEditing(null);
     setIsFormOpen(false);
+  };
+
+  const handleDisplayDetail = (exp: Experience) => {
+    setSelectedExperience(exp);
   };
 
   const handleSave = async () => {
@@ -58,39 +65,50 @@ export default function AdminExperience() {
       toast.error("Role, company, and start date are required");
       return;
     }
-    const supabase = createClient();
-    const payload = {
-      role: form.role, 
-      company: form.company, 
-      type: form.type,
-      start_date: form.start_date, 
-      end_date: form.end_date || null,
-      description: form.bullets.filter(Boolean),
-      tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
-      is_visible: form.is_visible,
-    };
+    
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        role: form.role, 
+        company: form.company, 
+        type: form.type,
+        start_date: form.start_date, 
+        end_date: form.end_date || null,
+        description: form.bullets.filter(Boolean),
+        tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
+        is_visible: form.is_visible,
+      };
 
-    if (editing) {
-      const { error } = await supabase.from("experiences").update(payload).eq("id", editing);
-      if (error) toast.error("Error updating experience: " + error.message);
-      else {
+      if (editing) {
+        const { error } = await supabase.from("experiences").update(payload).eq("id", editing);
+        if (error) throw error;
+        
         toast.success("Experience updated");
         resetForm();
         fetchData();
-      }
-    } else {
-      const { error } = await supabase.from("experiences").insert({
-        ...payload,
-        display_order: data.length,
-      });
-      if (error) toast.error("Error adding experience: " + error.message);
-      else {
+        if (selectedExperience?.id === editing) {
+          const { data: updated } = await supabase.from("experiences").select("*").eq("id", editing).single();
+          if (updated) setSelectedExperience(updated);
+        }
+      } else {
+        const { error } = await supabase.from("experiences").insert({
+          ...payload,
+          display_order: data.length,
+        });
+        if (error) throw error;
+        
         toast.success("Experience added");
         resetForm();
         fetchData();
       }
+    } catch (error: any) {
+      toast.error("Error: " + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const startEdit = (exp: Experience) => {
     setEditing(exp.id);
@@ -109,18 +127,28 @@ export default function AdminExperience() {
   };
 
   const toggleVisibility = async (exp: Experience) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("experiences")
-      .update({ is_visible: !exp.is_visible })
-      .eq("id", exp.id);
+    setIsSubmitting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("experiences")
+        .update({ is_visible: !exp.is_visible })
+        .eq("id", exp.id);
 
-    if (error) toast.error("Error updating visibility");
-    else {
+      if (error) throw error;
+
       toast.success(exp.is_visible ? "Hidden" : "Visible");
       fetchData();
+      if (selectedExperience?.id === exp.id) {
+        setSelectedExperience({ ...selectedExperience, is_visible: !exp.is_visible });
+      }
+    } catch (error: any) {
+      toast.error("Error updating visibility");
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
 
   const updateBullet = (index: number, value: string) => {
     const updated = [...form.bullets];
@@ -289,14 +317,125 @@ export default function AdminExperience() {
 
           </DrawerScrollArea>
         <DrawerFooter>
-          <button onClick={handleSave} className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
-            <Save className="w-4 h-4" />
-            {editing ? "Update Experience" : "Add Experience"}
+          <button 
+            onClick={handleSave} 
+            disabled={isSubmitting}
+            className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {isSubmitting ? (
+              <div className="w-4 h-4 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {isSubmitting ? "Processing..." : editing ? "Update Experience" : "Add Experience"}
           </button>
-          <button onClick={resetForm} className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent">
+          <button 
+            onClick={resetForm} 
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent disabled:opacity-50 transition-all"
+          >
             Cancel
           </button>
         </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={!!selectedExperience} onOpenChange={(open) => !open && setSelectedExperience(null)}>
+        <DrawerContent className="max-w-3xl mx-auto">
+          <DrawerHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DrawerTitle className="text-2xl font-roashe">{selectedExperience?.role}</DrawerTitle>
+                <DrawerDescription className="font-mono text-[10px] uppercase tracking-widest mt-1">
+                  {selectedExperience?.company} · Work Record
+                </DrawerDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => {
+                    const e = selectedExperience!;
+                    setSelectedExperience(null);
+                    startEdit(e);
+                  }}
+                  className="p-2 rounded-lg bg-foreground/5 hover:bg-foreground/10 text-foreground transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => {
+                    const id = selectedExperience!.id;
+                    setSelectedExperience(null);
+                    deleteItem(id);
+                  }}
+                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </DrawerHeader>
+
+          <DrawerScrollArea className="space-y-8 py-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Employment</p>
+                    <p className="text-sm font-medium uppercase">{selectedExperience?.type}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                    <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Duration</p>
+                    <p className="text-xs font-medium">
+                      {selectedExperience?.start_date && new Date(selectedExperience.start_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - {selectedExperience?.end_date ? new Date(selectedExperience.end_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "Present"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Achievement & Impact</h4>
+                  <ul className="space-y-2">
+                    {selectedExperience?.description.map((bullet, i) => (
+                      <li key={i} className="text-sm border-l-2 border-primary/20 pl-4 py-1">
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedExperience?.is_archived ? "bg-red-500" : "bg-emerald-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedExperience?.is_archived ? "Archived" : "Active"}
+                    </p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-border/50 bg-muted/30">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Visibility</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("w-2 h-2 rounded-full", selectedExperience?.is_visible ? "bg-emerald-500" : "bg-slate-500")} />
+                    <p className="text-sm font-medium uppercase tracking-wider">
+                      {selectedExperience?.is_visible ? "Visible" : "Hidden"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Technical Arsenal</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedExperience?.tech_stack.map(tech => (
+                      <span key={tech} className="px-2 py-0.5 rounded-md bg-foreground/5 text-[10px] font-mono border border-border/50">
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DrawerScrollArea>
         </DrawerContent>
       </Drawer>
 
@@ -304,6 +443,7 @@ export default function AdminExperience() {
         data={experiences}
         columns={columns}
         onEdit={startEdit}
+        onView={handleDisplayDetail}
         onArchive={archiveItem}
         onRestore={restoreItem}
         onDelete={deleteItem}
@@ -316,3 +456,4 @@ export default function AdminExperience() {
     </div>
   );
 }
+

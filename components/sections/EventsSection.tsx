@@ -4,6 +4,7 @@ import type { Event } from "@/lib/types";
 import CenterBurst from "@/components/animations/CenterBurst";
 import { Calendar, Trophy, Mic, Code, ArrowLeft, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import ShimmerText from "@/components/animations/ShimmerText";
 
 const typeIcons: Record<string, typeof Calendar> = {
   hackathon: Trophy,
@@ -108,14 +109,14 @@ export function EventList({ events }: EventListProps) {
 
 export default function EventsSection({ children }: { children?: React.ReactNode }) {
   return (
-    <section id="events" className="section-padding">
-      <div className="max-w-7xl mx-auto w-full">
+    <section id="events" className="section-padding relative overflow-hidden bg-black/50">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10">
         <CenterBurst>
-          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2">
-            // events &amp; activities
+          <p className="text-xs font-mono uppercase tracking-[0.3em] text-muted-foreground mb-2 text-center md:text-left">
+            // events & activities
           </p>
-          <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight mb-12">
-            Things I&apos;ve Attended
+          <h2 className="text-3xl sm:text-4xl font-roashe tracking-tight mb-12 text-center md:text-left">
+            <ShimmerText shimmerColor="#6366f1">Things I&apos;ve Attended</ShimmerText>
           </h2>
         </CenterBurst>
 

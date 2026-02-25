@@ -120,3 +120,16 @@ export type Social = {
     created_at: string;
     updated_at: string;
 };
+
+export type GalleryItem = {
+    id: string;
+    image_url: string;
+    title: string | null;
+    description: string | null;
+    display_order: number;
+    is_visible: boolean;
+    is_archived: boolean;
+    created_at: string;
+    updated_at?: string;
+};
+
