@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Upload, X, Loader2, CheckCircle2, Trash2, Maximize2, Repeat } from "lucide-react";
+import { Upload, X, Loader2, CheckCircle2, Trash2, Maximize2, Repeat, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
 import { 
@@ -11,7 +11,10 @@ import {
   DrawerHeader, 
   DrawerTitle, 
   DrawerDescription,
+  DrawerFooter,
 } from "@/components/ui/drawer";
+import Cropper, { Area } from "react-easy-crop";
+import getCroppedImg from "@/lib/utils/cropImage";
 
 interface ImageUploadProps {
   bucket: "project-images" | "blog-images" | "skill-images" | "social-images" | "cert-images" | "event-images" | "gallery-images";
@@ -105,6 +108,15 @@ export function ImageUpload({
   const [progress, setProgress] = useState<"idle" | "converting" | "uploading">("idle");
   const [preview, setPreview] = useState<string | null>(value || null);
   const [stats, setStats] = useState<{name: string, originalKB: number, convertedKB: number, savings: number} | null>(null);
+  
+  // Crop states
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,7 +125,11 @@ export function ImageUpload({
     setPreview(value || null);
   }, [value]);
 
-  const handleUpload = async (files: File[]) => {
+  const onCropComplete = (croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleFileSelect = (files: File[]) => {
     const file = files[0];
     if (!file) return;
 
@@ -122,11 +138,62 @@ export function ImageUpload({
       return;
     }
 
-    // Generous pre-check on raw file (before conversion it can be large)
     if (file.size > 30 * 1024 * 1024) {
-      toast.error("File too large — maximum 30 MB before conversion");
+      toast.error("File 30 MB + before conversion isn't supported smoothly by the cropper.");
       return;
     }
+
+    setOriginalFile(file);
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      setCropImageSrc(reader.result?.toString() || null);
+      setCropModalOpen(true);
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const performCropAndUpload = async () => {
+    if (!cropImageSrc || !croppedAreaPixels || !originalFile) return;
+
+    try {
+      setCropModalOpen(false); // Close modal and start loading state
+      const croppedBlob = await getCroppedImg(cropImageSrc, croppedAreaPixels);
+      if (!croppedBlob) throw new Error("Could not process cropping");
+
+      // Wrap the blob so that the existing handleUpload flow deals with a File-like object
+      const croppedFile = new File([croppedBlob], originalFile.name, { type: "image/jpeg" });
+      
+      await handleUpload([croppedFile]);
+    } catch (e) {
+      console.error(e);
+      toast.error("Error cropping image");
+    }
+  };
+
+  const handleEditExisting = () => {
+    if (preview) {
+      // If we are editing an already uploaded image, use its URL for the cropper.
+      // We create a fake File just to satisfy the dependencies later.
+      fetch(preview)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const fakeFile = new File([blob], "edited-image.jpg", { type: blob.type });
+          setOriginalFile(fakeFile);
+          
+          const reader = new FileReader();
+          reader.onload = () => {
+            setCropImageSrc(reader.result as string);
+            setCropModalOpen(true);
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => toast.error("Could not load image for editing"));
+    }
+  };
+
+  const handleUpload = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
 
     setUploading(true);
 
@@ -232,7 +299,7 @@ export function ImageUpload({
               </div>
 
               {/* Hover Actions */}
-              <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-50">
                  <input 
                    type="file" 
                    accept="image/*"
@@ -240,7 +307,7 @@ export function ImageUpload({
                    ref={fileInputRef} 
                    onChange={(e) => {
                      if (e.target.files?.length) {
-                       handleUpload(Array.from(e.target.files));
+                       handleFileSelect(Array.from(e.target.files));
                      }
                    }} 
                  />
@@ -250,6 +317,13 @@ export function ImageUpload({
                    title="Change Image"
                  >
                    <Repeat className="w-3.5 h-3.5" />
+                 </button>
+                 <button 
+                   onClick={handleEditExisting} 
+                   className="p-2 bg-background/80 hover:bg-background text-foreground backdrop-blur rounded-lg shadow-sm border border-border/50 transition-colors" 
+                   title="Edit existing"
+                 >
+                   <Pencil className="w-3.5 h-3.5" />
                  </button>
                  <button 
                    onClick={removeImage} 
@@ -286,7 +360,7 @@ export function ImageUpload({
             <FileUpload 
               value={preview || undefined} 
               loading={uploading} 
-              onChange={handleUpload} 
+              onChange={handleFileSelect} 
             />
           )}
         </div>
@@ -316,6 +390,48 @@ export function ImageUpload({
                <img src={preview || ""} alt="Full size preview" className="max-w-full max-h-full object-contain" />
             </div>
           </div>
+        </DrawerContent>
+      </Drawer>
+
+      <Drawer open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DrawerContent className="max-w-3xl mx-auto h-[80vh] flex flex-col">
+          <DrawerHeader className="shrink-0">
+            <DrawerTitle>Crop Image</DrawerTitle>
+            <DrawerDescription>Adjust your image to the perfect frame before uploading.</DrawerDescription>
+          </DrawerHeader>
+          <div 
+            className="flex-1 relative mx-6 mb-6 rounded-xl overflow-hidden border border-border/50 bg-black"
+            data-vaul-no-drag
+          >
+            {cropImageSrc && (
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={4 / 3}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+                showGrid={true}
+              />
+            )}
+          </div>
+          <DrawerFooter className="shrink-0 pt-0 pb-6">
+            <div className="flex items-center gap-4 max-w-sm mx-auto w-full">
+              <button 
+                onClick={performCropAndUpload}
+                 className="flex-1 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest rounded-xl hover:opacity-90 flex items-center justify-center gap-2"
+              >
+                Crop & Upload
+              </button>
+              <button 
+                onClick={() => setCropModalOpen(false)}
+                 className="px-6 py-3 bg-muted text-muted-foreground text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-accent"
+              >
+                Cancel
+              </button>
+            </div>
+          </DrawerFooter>
         </DrawerContent>
       </Drawer>
     </>
