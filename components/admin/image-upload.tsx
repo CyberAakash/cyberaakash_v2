@@ -198,6 +198,11 @@ export function ImageUpload({
     setUploading(true);
 
     try {
+      if (preview) {
+        // Replacing an image, clean up the old one from storage silently
+        await deleteFromStorage(preview);
+      }
+
       // ── Step 1: Decode HEIC → JPEG if needed ────────────────────────────
       setProgress("converting");
       const normalisedBlob = await normaliseFile(file);
@@ -246,11 +251,10 @@ export function ImageUpload({
     }
   };
 
-  const removeImage = async () => {
-    // Delete from Supabase Storage to save space
-    if (preview && preview.includes("supabase.co")) {
+  const deleteFromStorage = async (url: string) => {
+    if (url && url.includes("supabase.co")) {
       try {
-        const fileNameMatch = preview.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
+        const fileNameMatch = url.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
         if (fileNameMatch && fileNameMatch[1]) {
           const fileName = decodeURIComponent(fileNameMatch[1]);
           const supabase = createClient();
@@ -262,6 +266,12 @@ export function ImageUpload({
       } catch (e) {
         console.error("Error parsing/deleting from storage:", e);
       }
+    }
+  };
+
+  const removeImage = async () => {
+    if (preview) {
+      await deleteFromStorage(preview);
     }
 
     setPreview(null);
