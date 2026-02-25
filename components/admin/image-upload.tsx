@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import { Upload, X, Loader2, CheckCircle2, Trash2, Maximize2, Repeat, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { FileUpload } from "@/components/ui/file-upload";
@@ -200,7 +201,7 @@ export function ImageUpload({
     try {
       if (preview) {
         // Replacing an image, clean up the old one from storage silently
-        await deleteFromStorage(preview);
+        await deleteImageFromStorage(bucket, preview);
       }
 
       // ── Step 1: Decode HEIC → JPEG if needed ────────────────────────────
@@ -251,27 +252,9 @@ export function ImageUpload({
     }
   };
 
-  const deleteFromStorage = async (url: string) => {
-    if (url && url.includes("supabase.co")) {
-      try {
-        const fileNameMatch = url.match(/\/storage\/v1\/object\/public\/[^\/]+\/(.+)$/);
-        if (fileNameMatch && fileNameMatch[1]) {
-          const fileName = decodeURIComponent(fileNameMatch[1]);
-          const supabase = createClient();
-          const { error } = await supabase.storage.from(bucket).remove([fileName]);
-          if (error) {
-            console.error("Storage deletion error:", error);
-          }
-        }
-      } catch (e) {
-        console.error("Error parsing/deleting from storage:", e);
-      }
-    }
-  };
-
   const removeImage = async () => {
     if (preview) {
-      await deleteFromStorage(preview);
+      await deleteImageFromStorage(bucket, preview);
     }
 
     setPreview(null);

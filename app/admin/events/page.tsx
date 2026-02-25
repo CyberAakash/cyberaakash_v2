@@ -10,6 +10,7 @@ import MarkdownRenderer from "@/components/ui/markdown-renderer";
 import { cn } from "@/lib/utils";
 import { AdminTable } from "@/components/admin/AdminTable";
 import { useAdminActions } from "@/lib/hooks/use-admin-actions";
+import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import { 
   Drawer, 
   DrawerContent, 
@@ -168,7 +169,12 @@ export default function AdminEvents() {
     next[i] = url;
     setForm({ ...form, images: next });
   };
-  const removeImage = (i: number) => {
+  const removeImage = async (i: number) => {
+    const imageUrl = form.images[i];
+    if (imageUrl) {
+      await deleteImageFromStorage("project-images", imageUrl); // Note: Events currently use "project-images" bucket in the code
+      toast.success("Image removed from storage");
+    }
     setForm({ ...form, images: form.images.filter((_: any, idx: number) => idx !== i) });
   };
   const moveImage = (i: number, delta: number) => {
